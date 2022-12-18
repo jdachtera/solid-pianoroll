@@ -1,0 +1,14 @@
+.PianoRollKeys {
+  position: relative;
+  height: 100%;
+  width: 50px;
+}
+
+.PianoRollKeys-Key {
+  position: absolute;
+  box-sizing: border-box;
+  left: 0;
+  width: 100%;
+  border-color: #000;
+  border-style: solid;
+}

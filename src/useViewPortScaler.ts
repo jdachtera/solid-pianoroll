@@ -1,6 +1,8 @@
 import { createMemo } from "solid-js";
 import { clamp } from "./helpers";
 
+export type ViewPortScaler = ReturnType<typeof useViewPortScaler>;
+
 export default function useViewPortScaler(
   getState: () => {
     virtualPosition: number;
