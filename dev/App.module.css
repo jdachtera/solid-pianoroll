@@ -1,0 +1,14 @@
+form label {
+  text-align: left;
+  display: inline-block;
+  width: 200px;
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
