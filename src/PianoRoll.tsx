@@ -39,6 +39,7 @@ export type PianoRollProps = {
 
   onNoteChange?: (index: number, note: Note) => void;
   onInsertNote?: (note: Note) => void;
+  onRemoveNote?: (index: number) => void;
 };
 
 const PianoRoll = (allProps: PianoRollProps & JSX.IntrinsicElements["div"]) => {
@@ -58,6 +59,7 @@ const PianoRoll = (allProps: PianoRollProps & JSX.IntrinsicElements["div"]) => {
     "gridDivision",
     "snapToGrid",
     "onInsertNote",
+    "onRemoveNote",
   ]);
 
   const [scrollContainer, setScrollContainer] = createSignal<HTMLDivElement>();

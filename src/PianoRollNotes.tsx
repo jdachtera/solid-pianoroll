@@ -64,6 +64,9 @@ const PianoRollNotes = (props: { ref: Ref<HTMLDivElement | undefined> }) => {
                         : "move",
                     );
                   }}
+                  onDblClick={() => {
+                    context.onRemoveNote?.(index);
+                  }}
                   onMouseDown={(event) => {
                     context.onIsDraggingChange(true);
                     const initialPosition = context.horizontalViewPort.getPosition(event.clientX);

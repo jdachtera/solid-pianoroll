@@ -93,6 +93,9 @@ const Demo: Component = () => {
                 const index = notes().findIndex(({ ticks }) => ticks > note.ticks);
                 setNotes([...notes().slice(0, index), note, ...notes().splice(index)]);
               }}
+              onRemoveNote={(index) => {
+                setNotes([...notes().slice(0, index), ...notes().splice(index + 1)]);
+              }}
             />
           );
         }}
