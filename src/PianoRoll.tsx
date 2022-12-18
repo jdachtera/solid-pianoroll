@@ -1,10 +1,8 @@
-import { CSSObject, CSSProperties } from "@emotion/serialize";
 import { Midi } from "@tonejs/midi";
 
 import {
   JSX,
   createMemo,
-  createResource,
   splitProps,
   createSignal,
   onMount,
