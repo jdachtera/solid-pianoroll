@@ -1,10 +1,12 @@
-import { createEffect, Ref } from "solid-js";
+import { createEffect, createMemo, Ref } from "solid-js";
 import { clamp } from "./helpers";
 import { usePianoRollContext } from "./PianoRollContext";
 
 const ScrollContainer = (props: { ref: Ref<HTMLDivElement> }) => {
   let scrollContentRef: HTMLDivElement | undefined;
   const context = usePianoRollContext();
+
+  const gridDivisorTicks = createMemo(() => (context.ppq * 4) / context.gridDivision);
 
   const forwardEventToNote = (event: MouseEvent | PointerEvent | TouchEvent) => {
     const x = "clientX" in event ? event.clientX : event.touches[0]?.clientX;
@@ -93,7 +95,6 @@ const ScrollContainer = (props: { ref: Ref<HTMLDivElement> }) => {
               ? "e-resize"
               : "pointer",
         }),
-        //"box-sizing": "border-box",
         "z-index": 4,
         overflow: "scroll",
         "pointer-events": "auto",
@@ -108,7 +109,16 @@ const ScrollContainer = (props: { ref: Ref<HTMLDivElement> }) => {
       onClick={forwardEventToNote}
       onDblClick={(event) => {
         if (!forwardEventToNote(event)) {
-          //TODO create new note with current gutter length
+          const position = context.horizontalViewPort.getPosition(event.clientX);
+          const midi = 127 - Math.floor(context.verticalViewPort.getPosition(event.clientY));
+
+          const ticks = Math.floor(position / gridDivisorTicks()) * gridDivisorTicks();
+          const durationTicks = gridDivisorTicks();
+          const velocity = 127;
+
+          const note = { midi, ticks, durationTicks, velocity };
+
+          context.onInsertNote?.(note);
         }
       }}
       onMouseUp={forwardEventToNote}

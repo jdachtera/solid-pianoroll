@@ -89,6 +89,10 @@ const Demo: Component = () => {
               onNoteChange={(index, note) => {
                 setNotes([...notes().slice(0, index), note, ...notes().splice(index + 1)]);
               }}
+              onInsertNote={(note) => {
+                const index = notes().findIndex(({ ticks }) => ticks > note.ticks);
+                setNotes([...notes().slice(0, index), note, ...notes().splice(index)]);
+              }}
             />
           );
         }}
