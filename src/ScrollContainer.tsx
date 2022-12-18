@@ -94,7 +94,7 @@ const ScrollContainer = (props: { ref: Ref<HTMLDivElement> }) => {
               : "pointer",
         }),
         //"box-sizing": "border-box",
-        "z-index": 1,
+        "z-index": 4,
         overflow: "scroll",
         "pointer-events": "auto",
       }}

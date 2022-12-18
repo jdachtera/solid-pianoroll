@@ -111,7 +111,7 @@ const PianoRollNotes = (props: { ref: Ref<HTMLDivElement | undefined> }) => {
                     window.addEventListener("mouseup", handleMouseUp);
                   }}
                   style={{
-                    "z-index": 1,
+                    "z-index": 2,
                     position: "absolute",
                     "box-sizing": "border-box",
                     top: `${horizontalVirtualDimensions().offset}px`,
