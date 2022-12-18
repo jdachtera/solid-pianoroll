@@ -38,9 +38,9 @@ const PianoRollKeys = () => {
   );
 };
 
-const blackKeys = [1, 3, 6, 8, 10];
-const keyNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-const keys = Array.from({ length: 128 }).map((_, index) => ({
+export const blackKeys = [1, 3, 6, 8, 10];
+export const keyNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+export const keys = Array.from({ length: 128 }).map((_, index) => ({
   number: index,
   name: `${keyNames[index % 12]} ${Math.floor(index / 12) - 2}`,
   isBlack: blackKeys.includes(index % 12),

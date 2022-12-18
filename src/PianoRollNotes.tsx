@@ -4,9 +4,12 @@ import { usePianoRollContext } from "./PianoRollContext";
 const PianoRollNotes = (props: { ref: Ref<HTMLDivElement | undefined> }) => {
   const context = usePianoRollContext();
 
-  createEffect(() => {
-    console.log(context.clientRect.width);
-  });
+  const gridDivisionTicks = createMemo(() => (context.ppq * 4) / context.gridDivision);
+
+  const snapValueToGridIfEnabled = (value: number, altKey: boolean) =>
+    context.snapToGrid && !altKey
+      ? Math.round(value / gridDivisionTicks()) * gridDivisionTicks()
+      : value;
 
   return (
     <div
@@ -67,17 +70,22 @@ const PianoRollNotes = (props: { ref: Ref<HTMLDivElement | undefined> }) => {
                     const diffPosition = initialPosition - note().ticks;
 
                     const handleMouseMove = (mouseMoveEvent: MouseEvent) => {
-                      const ticks = Math.max(
-                        context.horizontalViewPort.getPosition(mouseMoveEvent.clientX) -
-                          diffPosition,
-                        0,
+                      const ticks = snapValueToGridIfEnabled(
+                        Math.max(
+                          context.horizontalViewPort.getPosition(mouseMoveEvent.clientX) -
+                            diffPosition,
+                          0,
+                        ),
+                        mouseMoveEvent.altKey,
                       );
 
                       context.onNoteChange?.(index, {
                         ...note(),
-                        midi: Math.round(
-                          127 - context.verticalViewPort.getPosition(mouseMoveEvent.clientY),
-                        ),
+                        ...(context.noteDragMode === "move" && {
+                          midi: Math.round(
+                            127 - context.verticalViewPort.getPosition(mouseMoveEvent.clientY),
+                          ),
+                        }),
                         ...((context.noteDragMode === "move" ||
                           context.noteDragMode === "trimStart") && {
                           ticks,
@@ -86,9 +94,11 @@ const PianoRollNotes = (props: { ref: Ref<HTMLDivElement | undefined> }) => {
                           durationTicks: note().durationTicks + note().ticks - ticks,
                         }),
                         ...(context.noteDragMode === "trimEnd" && {
-                          durationTicks:
+                          durationTicks: snapValueToGridIfEnabled(
                             context.horizontalViewPort.getPosition(mouseMoveEvent.clientX) -
-                            note().ticks,
+                              note().ticks,
+                            mouseMoveEvent.altKey,
+                          ),
                         }),
                       });
                     };

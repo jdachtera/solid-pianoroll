@@ -11,6 +11,7 @@ import {
 import styles from "./App.module.css";
 import { PianoRoll } from "../src";
 import { Midi } from "@tonejs/midi";
+import { GridDivision } from "src/PianoRoll";
 
 type Note = Pick<
   ReturnType<Midi["tracks"][number]["notes"][number]["toJSON"]>,
@@ -48,6 +49,9 @@ const Demo: Component = () => {
   const [notes, setNotes] = createSignal<Note[]>([]);
   const [duration, setDuration] = createSignal(0);
 
+  const [gridDivision, setGridDivision] = createSignal<GridDivision>(16);
+  const [snapToGrid, setSnapToGrid] = createSignal(true);
+
   createEffect(() => {
     setNotes(track()?.notes ?? []);
   });
@@ -69,6 +73,8 @@ const Demo: Component = () => {
               style={{
                 height: "500px",
               }}
+              gridDivision={gridDivision()}
+              snapToGrid={snapToGrid()}
               notes={notes()}
               ppq={parsedMidi()!.header.ppq}
               duration={duration()}
@@ -93,6 +99,37 @@ const Demo: Component = () => {
         <label>MIDI URL:</label>
         <input value={inputUrl()} onChange={(event) => setInputUrl(event.currentTarget.value)} />
         <button onClick={() => setUrl(inputUrl())}>Update</button>
+      </div>
+      <div>
+        <label>Grid:</label>
+        <select
+          value={gridDivision()}
+          onChange={(event) => {
+            console.log(event.currentTarget.options[event.currentTarget.selectedIndex]);
+            setGridDivision(
+              +event.currentTarget.options[event.currentTarget.selectedIndex].value as GridDivision,
+            );
+          }}
+        >
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="4">4</option>
+          <option value="8">8</option>
+          <option value="16">16</option>
+          <option value="32">32</option>
+          <option value="64">64</option>
+        </select>
+      </div>
+
+      <div>
+        <label>
+          <input
+            type="checkbox"
+            checked={snapToGrid()}
+            onChange={() => setSnapToGrid(!snapToGrid())}
+          />
+          Snap to grid
+        </label>
       </div>
     </div>
   );

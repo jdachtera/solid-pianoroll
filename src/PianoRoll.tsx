@@ -9,15 +9,21 @@ import PianoRollKeys from "./PianoRollKeys";
 import PianoRollNotes from "./PianoRollNotes";
 import ScrollContainer from "./ScrollContainer";
 import VerticalZoomControl from "./VerticalZoomControl";
+import PianoRollGrid from "./PianoRollGrid";
 
 type Note = Pick<
   ReturnType<Midi["tracks"][number]["notes"][number]["toJSON"]>,
   "durationTicks" | "midi" | "ticks" | "velocity"
 >;
 
+export type GridDivision = 1 | 2 | 4 | 8 | 16 | 32 | 64;
+
 export type PianoRollProps = {
   ppq: number;
   notes: Note[];
+
+  gridDivision: GridDivision;
+  snapToGrid: boolean;
 
   verticalPosition: number;
   verticalZoom: number;
@@ -48,6 +54,8 @@ const PianoRoll = (allProps: PianoRollProps & JSX.IntrinsicElements["div"]) => {
     "onZoomChange",
     "onPositionChange",
     "onNoteChange",
+    "gridDivision",
+    "snapToGrid",
   ]);
 
   const [scrollContainer, setScrollContainer] = createSignal<HTMLDivElement>();
@@ -65,6 +73,7 @@ const PianoRoll = (allProps: PianoRollProps & JSX.IntrinsicElements["div"]) => {
 
           <div class={styles.PianoRollInnerContainer}>
             <PianoRollNotes ref={setNotesContainer} />
+            <PianoRollGrid />
             <ScrollContainer ref={setScrollContainer} />
           </div>
 

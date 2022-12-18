@@ -6,10 +6,6 @@ const ScrollContainer = (props: { ref: Ref<HTMLDivElement> }) => {
   let scrollContentRef: HTMLDivElement | undefined;
   const context = usePianoRollContext();
 
-  createEffect(() => {
-    console.log(context.clientRect);
-  });
-
   const forwardEventToNote = (event: MouseEvent | PointerEvent | TouchEvent) => {
     const x = "clientX" in event ? event.clientX : event.touches[0]?.clientX;
     const y = "clientY" in event ? event.clientY : event.touches[0]?.clientY;
