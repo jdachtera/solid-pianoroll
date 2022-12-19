@@ -7,12 +7,12 @@
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
+    "noUncheckedIndexedAccess": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
     "noEmit": true,
-    "isolatedModules": true,
     "skipLibCheck": true,
     "types": [],
     "baseUrl": "."

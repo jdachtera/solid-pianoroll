@@ -8,8 +8,8 @@ import {
   untrack,
 } from "solid-js";
 
-import styles from "./App.module.css";
-import { PianoRoll } from "../src";
+import styles from "./Demo.module.css";
+import { PianoRoll, usePianoRoll } from "../src";
 import { Midi } from "@tonejs/midi";
 import { GridDivision } from "src/PianoRoll";
 
@@ -35,35 +35,40 @@ const Demo: Component = () => {
 
   const [url, setUrl] = createSignal("/MIDI_sample.mid");
   const [inputUrl, setInputUrl] = createSignal(untrack(() => url()));
-
-  const [position, setPosition] = createSignal(0);
-
-  const [zoom, setZoom] = createSignal(10);
-  const [verticalZoom, setVerticalZoom] = createSignal(5);
-  const [verticalPosition, setVerticalPosition] = createSignal(64);
-
   const [parsedMidi] = createResource(url, (url) => Midi.fromUrl(url));
-
   const track = createMemo(() => parsedMidi()?.toJSON().tracks[1]);
 
-  const [notes, setNotes] = createSignal<Note[]>([]);
-  const [duration, setDuration] = createSignal(0);
+  const {
+    position,
+    setPosition,
 
-  const [gridDivision, setGridDivision] = createSignal<GridDivision>(16);
-  const [snapToGrid, setSnapToGrid] = createSignal(true);
+    zoom,
+    setZoom,
+
+    verticalPosition,
+    setVerticalPosition,
+
+    verticalZoom,
+    setVerticalZoom,
+
+    gridDivision,
+    setGridDivision,
+
+    snapToGrid,
+    setSnapToGrid,
+
+    notes,
+    setNotes,
+
+    duration,
+  } = usePianoRoll();
 
   createEffect(() => {
     setNotes(track()?.notes ?? []);
   });
 
-  createEffect(() => {
-    setDuration(
-      (notes()[notes().length - 1]?.ticks ?? 0) + (notes()[notes().length - 1]?.durationTicks ?? 0),
-    );
-  });
-
   return (
-    <div class={styles.App}>
+    <div class={styles.Demo}>
       <h1>Solid Pianoroll</h1>
       <Show when={track()}>
         {() => {
@@ -90,8 +95,12 @@ const Demo: Component = () => {
                 setNotes([...notes().slice(0, index), note, ...notes().splice(index + 1)]);
               }}
               onInsertNote={(note) => {
-                const index = notes().findIndex(({ ticks }) => ticks > note.ticks);
+                const index = Math.max(
+                  notes().findIndex(({ ticks }) => ticks > note.ticks),
+                  0,
+                );
                 setNotes([...notes().slice(0, index), note, ...notes().splice(index)]);
+                return index;
               }}
               onRemoveNote={(index) => {
                 setNotes([...notes().slice(0, index), ...notes().splice(index + 1)]);
@@ -112,9 +121,9 @@ const Demo: Component = () => {
         <select
           value={gridDivision()}
           onChange={(event) => {
-            console.log(event.currentTarget.options[event.currentTarget.selectedIndex]);
             setGridDivision(
-              +event.currentTarget.options[event.currentTarget.selectedIndex].value as GridDivision,
+              +event.currentTarget.options[event.currentTarget.selectedIndex]!
+                .value as GridDivision,
             );
           }}
         >

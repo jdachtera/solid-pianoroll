@@ -1,4 +1,4 @@
-import { createEffect, createMemo, Ref } from "solid-js";
+import { createEffect, createMemo, createSignal, Ref } from "solid-js";
 import { clamp } from "./helpers";
 import { usePianoRollContext } from "./PianoRollContext";
 
@@ -9,8 +9,8 @@ const ScrollContainer = (props: { ref: Ref<HTMLDivElement> }) => {
   const gridDivisorTicks = createMemo(() => (context.ppq * 4) / context.gridDivision);
 
   const forwardEventToNote = (event: MouseEvent | PointerEvent | TouchEvent) => {
-    const x = "clientX" in event ? event.clientX : event.touches[0]?.clientX;
-    const y = "clientY" in event ? event.clientY : event.touches[0]?.clientY;
+    const x = "clientX" in event ? event.clientX : event.touches[0]?.clientX ?? 0;
+    const y = "clientY" in event ? event.clientY : event.touches[0]?.clientY ?? 0;
 
     const elementUnderMouse = [...(context.notesContainer?.querySelectorAll?.("div") ?? [])].find(
       (element) => {
@@ -81,6 +81,33 @@ const ScrollContainer = (props: { ref: Ref<HTMLDivElement> }) => {
     });
   });
 
+  const insertOrUpdateNote = (event: MouseEvent) => {
+    const position = context.horizontalViewPort.getPosition(event.clientX);
+    const midi = 127 - Math.floor(context.verticalViewPort.getPosition(event.clientY));
+    const eventPositionTicks = Math.floor(position / gridDivisorTicks()) * gridDivisorTicks();
+    const velocity = 127;
+
+    const existingNote = newNote();
+
+    const ticks = existingNote?.ticks ?? eventPositionTicks;
+    const durationTicks = existingNote?.ticks
+      ? eventPositionTicks - existingNote?.ticks
+      : gridDivisorTicks();
+
+    const note = { midi, ticks, durationTicks, velocity };
+
+    if (existingNote) {
+      context.onNoteChange?.(newNoteIndex(), note);
+      return newNoteIndex();
+    } else {
+      return context.onInsertNote?.(note) ?? -1;
+    }
+  };
+
+  const [newNoteIndex, setNewNoteIndex] = createSignal(-1);
+  const newNote = createMemo(() => context.notes[newNoteIndex()]);
+  const [isMouseDown, setIsMouseDown] = createSignal(false);
+
   return (
     <div
       ref={props.ref}
@@ -100,28 +127,52 @@ const ScrollContainer = (props: { ref: Ref<HTMLDivElement> }) => {
         "pointer-events": "auto",
       }}
       onScroll={handleScroll}
-      onMouseDown={forwardEventToNote}
+      onMouseDown={(event) => {
+        if (forwardEventToNote(event)) return;
+
+        setIsMouseDown(true);
+      }}
       onMouseMove={(event) => {
+        event.preventDefault();
+
         if (forwardEventToNote(event)) return;
         if (context.isDragging) return;
-        context.onNoteDragModeChange(undefined);
-      }}
-      onClick={forwardEventToNote}
-      onDblClick={(event) => {
-        if (!forwardEventToNote(event)) {
-          const position = context.horizontalViewPort.getPosition(event.clientX);
-          const midi = 127 - Math.floor(context.verticalViewPort.getPosition(event.clientY));
 
-          const ticks = Math.floor(position / gridDivisorTicks()) * gridDivisorTicks();
-          const durationTicks = gridDivisorTicks();
-          const velocity = 127;
-
-          const note = { midi, ticks, durationTicks, velocity };
-
-          context.onInsertNote?.(note);
+        if (!isMouseDown()) {
+          context.onNoteDragModeChange(undefined);
+          return;
         }
+
+        const index = insertOrUpdateNote(event);
+
+        setNewNoteIndex(index);
       }}
-      onMouseUp={forwardEventToNote}
+      onDblClick={(event) => {
+        if (newNote()) return;
+        if (context.isDragging) return;
+        if (forwardEventToNote(event)) return;
+
+        insertOrUpdateNote(event);
+      }}
+      onClick={(event) => {
+        if (newNote()) {
+          setNewNoteIndex(-1);
+          return;
+        }
+
+        if (forwardEventToNote(event)) return;
+        if (!event.altKey) return;
+
+        insertOrUpdateNote(event);
+      }}
+      onMouseUp={(event) => {
+        setIsMouseDown(false);
+        if (newNote()) return;
+        if (forwardEventToNote(event)) return;
+        if (!event.altKey) return;
+
+        insertOrUpdateNote(event);
+      }}
       onTouchStart={forwardEventToNote}
       onTouchMove={forwardEventToNote}
       onTouchEnd={forwardEventToNote}

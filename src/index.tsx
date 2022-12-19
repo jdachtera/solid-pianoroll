@@ -1,3 +1,4 @@
 import PianoRoll from "./PianoRoll";
+import usePianoRoll from "./usePianoRoll";
 
-export { PianoRoll };
+export { PianoRoll, usePianoRoll };

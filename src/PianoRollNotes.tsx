@@ -1,4 +1,4 @@
-import { createEffect, createMemo, Index, Ref, Show } from "solid-js";
+import { createMemo, Index, Ref, Show } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
 
 const PianoRollNotes = (props: { ref: Ref<HTMLDivElement | undefined> }) => {

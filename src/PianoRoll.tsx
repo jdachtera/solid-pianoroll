@@ -10,11 +10,7 @@ import PianoRollNotes from "./PianoRollNotes";
 import ScrollContainer from "./ScrollContainer";
 import VerticalZoomControl from "./VerticalZoomControl";
 import PianoRollGrid from "./PianoRollGrid";
-
-type Note = Pick<
-  ReturnType<Midi["tracks"][number]["notes"][number]["toJSON"]>,
-  "durationTicks" | "midi" | "ticks" | "velocity"
->;
+import { Note } from "./types";
 
 export type GridDivision = 1 | 2 | 4 | 8 | 16 | 32 | 64;
 
@@ -38,7 +34,7 @@ export type PianoRollProps = {
   onPositionChange?: (zoom: number) => void;
 
   onNoteChange?: (index: number, note: Note) => void;
-  onInsertNote?: (note: Note) => void;
+  onInsertNote?: (note: Note) => number;
   onRemoveNote?: (index: number) => void;
 };
 
