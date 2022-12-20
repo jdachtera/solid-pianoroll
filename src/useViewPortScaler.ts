@@ -1,5 +1,4 @@
 import { createMemo } from "solid-js";
-import { clamp } from "./helpers";
 
 export type ViewPortScaler = ReturnType<typeof useViewPortScaler>;
 
@@ -25,12 +24,23 @@ export default function useViewPortScaler(
     return getScaledValue(position) - getScaledValue(state().virtualPosition);
   }
 
+  function getVisibleRange() {
+    return state().virtualRange / state().zoom;
+  }
+
   function getPosition(offset: number) {
-    const visibleDuration = state().virtualRange / state().zoom;
     const percentX = (offset - state().viewPortOffset) / state().viewPortSize;
-    const position = state().virtualPosition + percentX * visibleDuration;
+    const position = state().virtualPosition + percentX * getVisibleRange();
 
     return position;
+  }
+
+  function getMaxPosition() {
+    return state().virtualRange - state().virtualRange / state().zoom;
+  }
+
+  function getScrollSize() {
+    return clamp(state().zoom * state().viewPortSize, state().viewPortSize, 100000);
   }
 
   function getVirtualDimensions(position: number, length: number) {
@@ -48,5 +58,12 @@ export default function useViewPortScaler(
     getCoordinates,
     getPosition,
     getVirtualDimensions,
+    getVisibleRange,
+    getMaxPosition,
+    getScrollSize,
   };
 }
+
+export const clamp = (value: number, min: number, max: number) => {
+  return Math.max(min, Math.min(max, value));
+};

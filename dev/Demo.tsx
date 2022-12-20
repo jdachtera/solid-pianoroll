@@ -4,13 +4,14 @@ import {
   createMemo,
   createResource,
   createSignal,
+  Index,
   Show,
   untrack,
 } from "solid-js";
 
 import styles from "./Demo.module.css";
 import { PianoRoll, usePianoRoll } from "../src";
-import { Midi } from "@tonejs/midi";
+import { Midi, MidiJSON } from "@tonejs/midi";
 import { GridDivision } from "src/PianoRoll";
 
 type Note = Pick<
@@ -35,117 +36,127 @@ const Demo: Component = () => {
 
   const [url, setUrl] = createSignal("/MIDI_sample.mid");
   const [inputUrl, setInputUrl] = createSignal(untrack(() => url()));
-  const [parsedMidi] = createResource(url, (url) => Midi.fromUrl(url));
-  const track = createMemo(() => parsedMidi()?.toJSON().tracks[1]);
+  const [parsedMidi] = createResource(url, async (url) => {
+    const midi = await Midi.fromUrl(url);
+    return midi.toJSON();
+  });
 
-  const {
-    position,
-    setPosition,
+  const [selectedTrack, setSelectedTrack] = createSignal<MidiJSON["tracks"][number]>();
 
-    zoom,
-    setZoom,
-
-    verticalPosition,
-    setVerticalPosition,
-
-    verticalZoom,
-    setVerticalZoom,
-
-    gridDivision,
-    setGridDivision,
-
-    snapToGrid,
-    setSnapToGrid,
-
-    notes,
-    setNotes,
-
-    duration,
-  } = usePianoRoll();
+  const pianoRoll = usePianoRoll();
 
   createEffect(() => {
-    setNotes(track()?.notes ?? []);
+    const midi = parsedMidi();
+    if (!midi) return;
+
+    pianoRoll.onPpqChange(midi.header.ppq);
+    const track = midi.tracks.find(({ notes }) => notes.length);
+    setSelectedTrack(track);
+  });
+
+  createEffect(() => {
+    pianoRoll.onNotesChange(selectedTrack()?.notes ?? []);
   });
 
   return (
     <div class={styles.Demo}>
       <h1>Solid Pianoroll</h1>
-      <Show when={track()}>
-        {() => {
-          if (!track()) return;
-          return (
-            <PianoRoll
-              style={{
-                height: "500px",
-              }}
-              gridDivision={gridDivision()}
-              snapToGrid={snapToGrid()}
-              notes={notes()}
-              ppq={parsedMidi()!.header.ppq}
-              duration={duration()}
-              position={position()}
-              verticalPosition={verticalPosition()}
-              verticalZoom={verticalZoom()}
-              zoom={zoom()}
-              onPositionChange={setPosition}
-              onZoomChange={setZoom}
-              onVerticalZoomChange={setVerticalZoom}
-              onVerticalPositionChange={setVerticalPosition}
-              onNoteChange={(index, note) => {
-                setNotes([...notes().slice(0, index), note, ...notes().splice(index + 1)]);
-              }}
-              onInsertNote={(note) => {
-                const index = Math.max(
-                  notes().findIndex(({ ticks }) => ticks > note.ticks),
-                  0,
-                );
-                setNotes([...notes().slice(0, index), note, ...notes().splice(index)]);
-                return index;
-              }}
-              onRemoveNote={(index) => {
-                setNotes([...notes().slice(0, index), ...notes().splice(index + 1)]);
-              }}
-            />
-          );
-        }}
-      </Show>
 
-      <h2>Info:</h2>
-      <div>
-        <label>MIDI URL:</label>
-        <input value={inputUrl()} onChange={(event) => setInputUrl(event.currentTarget.value)} />
-        <button onClick={() => setUrl(inputUrl())}>Update</button>
-      </div>
-      <div>
-        <label>Grid:</label>
-        <select
-          value={gridDivision()}
-          onChange={(event) => {
-            setGridDivision(
-              +event.currentTarget.options[event.currentTarget.selectedIndex]!
-                .value as GridDivision,
-            );
+      <div style={{ flex: 1, display: "flex", "flex-direction": "row", overflow: "hidden" }}>
+        <div style={{ "max-width": "300px" }}>
+          <ul style={{ "margin-block": 0, "padding-inline": 0, margin: " 0 10px" }}>
+            <Index each={parsedMidi()?.tracks}>
+              {(track, index) => (
+                <li
+                  style={{
+                    "list-style": "none",
+                    padding: "5px",
+                    margin: 0,
+                    cursor: "pointer",
+                    background: track() === selectedTrack() ? "lightgray" : "none",
+                  }}
+                  onClick={() => setSelectedTrack(track())}
+                >
+                  Channel {track().channel}: {track().name}
+                </li>
+              )}
+            </Index>
+          </ul>
+        </div>
+
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            "flex-direction": "column",
+            overflow: "hidden",
           }}
         >
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="4">4</option>
-          <option value="8">8</option>
-          <option value="16">16</option>
-          <option value="32">32</option>
-          <option value="64">64</option>
-        </select>
+          <div style={{ background: "gray", flex: 1, position: "relative", overflow: "hidden" }}>
+            <PianoRoll
+              style={{ height: "100%" }}
+              gridDivision={pianoRoll.gridDivision()}
+              snapToGrid={pianoRoll.snapToGrid()}
+              notes={pianoRoll.notes()}
+              ppq={pianoRoll.ppq()}
+              duration={pianoRoll.duration()}
+              position={pianoRoll.position()}
+              verticalPosition={pianoRoll.verticalPosition()}
+              verticalZoom={pianoRoll.verticalZoom()}
+              zoom={pianoRoll.zoom()}
+              onPositionChange={pianoRoll.onPositionChange}
+              onZoomChange={pianoRoll.onZoomChange}
+              onVerticalZoomChange={pianoRoll.onVerticalZoomChange}
+              onVerticalPositionChange={pianoRoll.onVerticalPositionChange}
+              onNoteChange={pianoRoll.onNoteChange}
+              onInsertNote={pianoRoll.onInsertNote}
+              onRemoveNote={pianoRoll.onRemoveNote}
+            />
+            ;
+          </div>
+        </div>
       </div>
 
+      {/* */}
+
       <div>
-        <label>
-          <input
-            type="checkbox"
-            checked={snapToGrid()}
-            onChange={() => setSnapToGrid(!snapToGrid())}
-          />
-          Snap to grid
-        </label>
+        <h2>Info:</h2>
+        <div>
+          <label>MIDI URL:</label>
+          <input value={inputUrl()} onChange={(event) => setInputUrl(event.currentTarget.value)} />
+          <button onClick={() => setUrl(inputUrl())}>Update</button>
+        </div>
+        <div>
+          <label>Grid:</label>
+          <select
+            value={pianoRoll.gridDivision()}
+            onChange={(event) => {
+              pianoRoll.onGridDivisionChange(
+                +event.currentTarget.options[event.currentTarget.selectedIndex]!
+                  .value as GridDivision,
+              );
+            }}
+          >
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="4">4</option>
+            <option value="8">8</option>
+            <option value="16">16</option>
+            <option value="32">32</option>
+            <option value="64">64</option>
+          </select>
+        </div>
+
+        <div>
+          <label>
+            <input
+              type="checkbox"
+              checked={pianoRoll.snapToGrid()}
+              onChange={() => pianoRoll.onSnapToGridChange(!pianoRoll.snapToGrid())}
+            />
+            Snap to grid
+          </label>
+        </div>
       </div>
     </div>
   );

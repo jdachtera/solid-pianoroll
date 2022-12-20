@@ -50,7 +50,7 @@ export const PianoRollContextProvider = (
 
     virtualPosition: props.position,
     virtualRange: props.duration,
-    zoom: props.zoom,
+    zoom: props.zoom * (500 / clientRect().width),
   }));
 
   const verticalViewPort = useViewPortScaler(() => ({
@@ -58,7 +58,7 @@ export const PianoRollContextProvider = (
     viewPortSize: clientRect().height,
 
     virtualPosition: props.verticalPosition,
-    zoom: props.verticalZoom,
+    zoom: props.verticalZoom * (500 / clientRect().height),
 
     virtualRange: 128,
   }));

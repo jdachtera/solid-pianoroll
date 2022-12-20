@@ -1,5 +1,5 @@
 import { createEffect, createMemo, createSignal, Ref } from "solid-js";
-import { clamp } from "./helpers";
+
 import { usePianoRollContext } from "./PianoRollContext";
 
 const ScrollContainer = (props: { ref: Ref<HTMLDivElement> }) => {
@@ -37,8 +37,8 @@ const ScrollContainer = (props: { ref: Ref<HTMLDivElement> }) => {
       didUpdateScroll = false;
       return;
     }
-    const maxVerticalPosition = 128 - 128 / context.verticalZoom;
-    const maxPosition = context.duration - context.duration / context.zoom;
+    const maxVerticalPosition = context.verticalViewPort.getMaxPosition();
+    const maxPosition = context.horizontalViewPort.getMaxPosition();
 
     const { width, height } = context.clientRect;
     const { scrollTop, scrollLeft, scrollWidth, scrollHeight } = event.currentTarget;
@@ -53,8 +53,8 @@ const ScrollContainer = (props: { ref: Ref<HTMLDivElement> }) => {
   let didUpdateScroll = false;
 
   createEffect(() => {
-    const maxVerticalPosition = 128 - 128 / context.verticalZoom;
-    const maxPosition = context.duration - context.duration / context.zoom;
+    const maxVerticalPosition = context.verticalViewPort.getMaxPosition();
+    const maxPosition = context.horizontalViewPort.getMaxPosition();
 
     const scrollTopAmount =
       maxVerticalPosition > 0 ? context.verticalPosition / maxVerticalPosition : 0;
@@ -64,10 +64,10 @@ const ScrollContainer = (props: { ref: Ref<HTMLDivElement> }) => {
 
     if (!scrollContentRef?.parentElement) return;
 
-    const scrollDivHeight = clamp(context.verticalZoom * height, height, 10000);
+    const scrollDivHeight = context.verticalViewPort.getScrollSize();
     const scrollTop = scrollTopAmount * (scrollDivHeight - height);
 
-    const scrollDivWidth = clamp(context.zoom * width, width, 10000);
+    const scrollDivWidth = context.horizontalViewPort.getScrollSize();
     const scrollLeft = scrollLeftAmount * (scrollDivWidth - width);
 
     didUpdateScroll = true;

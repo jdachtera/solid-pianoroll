@@ -1,14 +1,36 @@
-import { createEffect, createMemo, Index, Ref, Show } from "solid-js";
+import { createMemo, Index, Show } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
 import { blackKeys, keys } from "./PianoRollKeys";
 
 const PianoRollGrid = () => {
   const context = usePianoRollContext();
 
-  const gridDivisorTicks = createMemo(() => (context.ppq * 4) / context.gridDivision);
+  const measureTicks = createMemo(() => context.ppq * 4);
+  const selectedGridDivisorTicks = createMemo(() => measureTicks() / context.gridDivision);
+
+  function calculateVisibleGridDivisorTicks(value: number): number {
+    if (context.horizontalViewPort.getVisibleRange() / value > 100) {
+      return calculateVisibleGridDivisorTicks(value * 2);
+    }
+    if (context.horizontalViewPort.getVisibleRange() / value < 30) {
+      return calculateVisibleGridDivisorTicks(value / 2);
+    }
+    return value;
+  }
+
+  const gridDivisorTicks = createMemo(() =>
+    calculateVisibleGridDivisorTicks(selectedGridDivisorTicks()),
+  );
+
   const gridArray = createMemo(() => {
-    const numberOfLines = context.duration / gridDivisorTicks();
-    return Array.from({ length: numberOfLines }).map((_, index) => index * gridDivisorTicks());
+    const numberOfLines =
+      Math.ceil(context.horizontalViewPort.getVisibleRange() / gridDivisorTicks()) + 1;
+    const startIndex = Math.floor(context.position / gridDivisorTicks());
+
+    return Array.from({ length: numberOfLines }).map((_, index) => ({
+      index: index + startIndex,
+      ticks: (index + startIndex) * gridDivisorTicks(),
+    }));
   });
 
   return (
@@ -29,9 +51,9 @@ const PianoRollGrid = () => {
         }}
       >
         <Index each={gridArray()}>
-          {(tick, index) => {
+          {(entry) => {
             const virtualDimensions = createMemo(() =>
-              context.horizontalViewPort.getVirtualDimensions(tick(), gridDivisorTicks()),
+              context.horizontalViewPort.getVirtualDimensions(entry().ticks, gridDivisorTicks()),
             );
 
             return (
@@ -42,7 +64,14 @@ const PianoRollGrid = () => {
                     "z-index": 1,
                     position: "absolute",
                     "box-sizing": "border-box",
-                    background: index % 4 === 0 ? "#ccc" : "#ddd",
+                    background:
+                      Math.ceil(
+                        ((entry().index + 1) * selectedGridDivisorTicks()) / measureTicks(),
+                      ) %
+                        2 ===
+                      0
+                        ? "#ddd"
+                        : "#ccc",
                     top: `0px`,
                     height: `100%`,
                     left: `${virtualDimensions().offset}px`,

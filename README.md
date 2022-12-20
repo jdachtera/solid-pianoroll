@@ -24,7 +24,7 @@ pnpm add solid-pianoroll
 
 Use it:
 
-### Interactive waveform
+### Interactive PianoRoll
 
 ```tsx
 import { PianoRoll } from "solid-pianoroll";

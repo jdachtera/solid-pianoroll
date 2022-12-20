@@ -14,4 +14,9 @@ form label {
 }
 
 .Demo {
+  display: flex;
+  height: 100vh;
+  margin: 0;
+  flex-direction: column;
+  overflow: hidden;
 }
