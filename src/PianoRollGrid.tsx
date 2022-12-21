@@ -23,8 +23,9 @@ const PianoRollGrid = () => {
   );
 
   const gridArray = createMemo(() => {
-    const numberOfLines =
-      Math.ceil(context.horizontalViewPort.getVisibleRange() / gridDivisorTicks()) + 1;
+    const numberOfLines = Math.ceil(
+      context.horizontalViewPort.getVisibleRange() / gridDivisorTicks(),
+    );
     const startIndex = Math.floor(context.position / gridDivisorTicks());
 
     return Array.from({ length: numberOfLines }).map((_, index) => ({
@@ -65,9 +66,7 @@ const PianoRollGrid = () => {
                     position: "absolute",
                     "box-sizing": "border-box",
                     background:
-                      Math.ceil(
-                        ((entry().index + 1) * selectedGridDivisorTicks()) / measureTicks(),
-                      ) %
+                      Math.ceil((entry().index + 1 * selectedGridDivisorTicks()) / measureTicks()) %
                         2 ===
                       0
                         ? "#ddd"
@@ -76,7 +75,12 @@ const PianoRollGrid = () => {
                     height: `100%`,
                     left: `${virtualDimensions().offset}px`,
                     width: `${virtualDimensions().size}px`,
-                    "border-left": "1px gray solid",
+                    "border-left-style": "solid",
+                    "border-left-width": "0.5px",
+                    "border-left-color":
+                      (entry().index * gridDivisorTicks()) % selectedGridDivisorTicks() === 0
+                        ? "gray"
+                        : "#bbb",
                   }}
                 ></div>
               </Show>
