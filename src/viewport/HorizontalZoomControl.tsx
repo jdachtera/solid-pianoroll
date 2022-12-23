@@ -17,6 +17,7 @@ const HorizontalZoomControl = (props: JSX.IntrinsicElements["input"]) => {
       style={{
         "margin-left": "50px",
         "margin-right": "16px",
+        ...(typeof props.style === "object" && props.style),
       }}
     />
   );

@@ -20,7 +20,9 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
 
   const insertOrUpdateNote = (event: MouseEvent) => {
     const position = horizontalViewPort().calculatePosition(event.clientX);
-    const midi = 127 - Math.floor(verticalViewPort().calculatePosition(event.clientY));
+    const midi = context.condensed
+      ? 60
+      : 127 - Math.floor(verticalViewPort().calculatePosition(event.clientY));
     const eventPositionTicks = Math.floor(position / gridDivisionTicks()) * gridDivisionTicks();
     const velocity = 127;
 
@@ -70,8 +72,6 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
 
         const index = insertOrUpdateNote(event);
 
-        console.log({ index });
-
         setNewNoteIndex(index);
       }}
       onMouseUp={(event) => {
@@ -93,7 +93,7 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
     >
       <Index each={context.notes}>
         {(note, index) => {
-          const verticalVirtualDimensionss = createMemo(() =>
+          const verticalVirtualDimensions = createMemo(() =>
             verticalViewPort().calculatePixelDimensions(127 - note().midi, 1),
           );
 
@@ -102,7 +102,12 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
           );
 
           return (
-            <Show when={!!verticalVirtualDimensionss().size && !!horizontalDimensions().size}>
+            <Show
+              when={
+                (verticalViewPort().isVisible(verticalVirtualDimensions()) || context.condensed) &&
+                horizontalViewPort().isVisible(horizontalDimensions())
+              }
+            >
               <div
                 class={getClasses(noteDragMode()).join(" ")}
                 onMouseMove={(event) => {
@@ -148,11 +153,12 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
 
                     context.onNoteChange?.(index, {
                       ...note(),
-                      ...(noteDragMode() === "move" && {
-                        midi: Math.round(
-                          127 - verticalViewPort().calculatePosition(mouseMoveEvent.clientY),
-                        ),
-                      }),
+                      ...(noteDragMode() === "move" &&
+                        !context.condensed && {
+                          midi: Math.round(
+                            127 - verticalViewPort().calculatePosition(mouseMoveEvent.clientY),
+                          ),
+                        }),
                       ...((noteDragMode() === "move" || noteDragMode() === "trimStart") && {
                         ticks,
                       }),
@@ -178,8 +184,13 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
                 }}
                 style={{
                   "background-color": `rgba(255,0,0, ${(128 + note().velocity) / 256})`,
-                  top: `${verticalVirtualDimensionss().offset}px`,
-                  height: `${verticalVirtualDimensionss().size}px`,
+                  ...(context.condensed
+                    ? { top: 0, height: "100%" }
+                    : {
+                        top: `${verticalVirtualDimensions().offset}px`,
+                        height: `${verticalVirtualDimensions().size}px`,
+                      }),
+
                   left: `${horizontalDimensions().offset}px`,
                   width: `${horizontalDimensions().size}px`,
                 }}

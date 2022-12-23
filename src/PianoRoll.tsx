@@ -1,8 +1,8 @@
 import styles from "./PianoRoll.module.css";
 
-import { JSX, splitProps, createSignal, createMemo } from "solid-js";
+import { JSX, createSignal, createMemo } from "solid-js";
 
-import { PianoRollContextProvider } from "./PianoRollContext";
+import { PianoRollContextProvider, splitContextProps } from "./PianoRollContext";
 import PianoRollKeys from "./PianoRollKeys";
 import PianoRollNotes from "./PianoRollNotes";
 import ScrollContainer from "./viewport/ScrollContainer";
@@ -43,24 +43,7 @@ export type PianoRollProps = {
 };
 
 const PianoRoll = (allProps: PianoRollProps & JSX.IntrinsicElements["div"]) => {
-  const [contextProps, divProps] = splitProps(allProps, [
-    "ppq",
-    "notes",
-    "position",
-    "duration",
-    "zoom",
-    "verticalPosition",
-    "verticalZoom",
-    "onVerticalZoomChange",
-    "onVerticalPositionChange",
-    "onZoomChange",
-    "onPositionChange",
-    "onNoteChange",
-    "gridDivision",
-    "snapToGrid",
-    "onInsertNote",
-    "onRemoveNote",
-  ]);
+  const [contextProps, divProps] = splitContextProps(allProps);
 
   const [scrollerRef, setScrollerRef] = createSignal<HTMLDivElement>();
   const clientRect = useBoundingClientRect(scrollerRef);

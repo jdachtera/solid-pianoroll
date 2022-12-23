@@ -3,8 +3,6 @@
   display: flex;
   overflow: hidden;
   flex-direction: column;
-  padding-top: 16px;
-  padding-left: 16px;
 }
 
 .PianoRollContainer {

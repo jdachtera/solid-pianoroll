@@ -1,4 +1,4 @@
-import { createContext, useContext } from "solid-js";
+import { createContext, splitProps, useContext } from "solid-js";
 
 import { PianoRollProps } from "./PianoRoll";
 
@@ -13,3 +13,24 @@ export const usePianoRollContext = () => {
 
   return context;
 };
+
+export const splitContextProps = (allProps: PianoRollProps) =>
+  splitProps(allProps, [
+    "condensed",
+    "duration",
+    "gridDivision",
+    "notes",
+    "position",
+    "ppq",
+    "snapToGrid",
+    "verticalPosition",
+    "verticalZoom",
+    "zoom",
+    "onInsertNote",
+    "onNoteChange",
+    "onPositionChange",
+    "onRemoveNote",
+    "onVerticalPositionChange",
+    "onVerticalZoomChange",
+    "onZoomChange",
+  ]);

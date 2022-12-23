@@ -1,9 +1,10 @@
-import { createEffect, createSignal } from "solid-js";
+import { createSignal } from "solid-js";
 import { GridDivision } from "./PianoRoll";
-import { Note } from "./types";
 
 const usePianoRoll = () => {
   const [ppq, onPpqChange] = createSignal(120);
+
+  const [condensed, onCondensedChange] = createSignal(false);
 
   const [position, onPositionChange] = createSignal(0);
 
@@ -14,36 +15,7 @@ const usePianoRoll = () => {
   const [gridDivision, onGridDivisionChange] = createSignal<GridDivision>(16);
   const [snapToGrid, onSnapToGridChange] = createSignal(true);
 
-  const [notes, onNotesChange] = createSignal<Note[]>([]);
   const [duration, onDurationChange] = createSignal(0);
-
-  const onNoteChange = (index: number, note: Note) => {
-    onNotesChange([...notes().slice(0, index), note, ...notes().splice(index + 1)]);
-  };
-
-  const onInsertNote = (note: Note) => {
-    const index = Math.max(
-      notes().findIndex(({ ticks }) => ticks > note.ticks),
-      0,
-    );
-    onNotesChange([...notes().slice(0, index), note, ...notes().splice(index)]);
-    return index;
-  };
-
-  const onRemoveNote = (index: number) => {
-    onNotesChange([...notes().slice(0, index), ...notes().splice(index + 1)]);
-  };
-
-  createEffect(() => {
-    const minDuration = Math.max(
-      (notes()[notes().length - 1]?.ticks ?? 0) + (notes()[notes().length - 1]?.durationTicks ?? 0),
-      ppq() * 4 * 4,
-    );
-
-    if (duration() < minDuration) {
-      onDurationChange(minDuration);
-    }
-  });
 
   return {
     ppq,
@@ -67,11 +39,8 @@ const usePianoRoll = () => {
     snapToGrid,
     onSnapToGridChange,
 
-    notes,
-    onNotesChange,
-    onNoteChange,
-    onInsertNote,
-    onRemoveNote,
+    condensed,
+    onCondensedChange,
 
     duration,
     onDurationChange,

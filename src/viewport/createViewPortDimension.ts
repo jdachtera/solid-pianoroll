@@ -26,6 +26,7 @@ export default function createViewPortDimension(getState: () => ViewPortDimensio
     calculatePixelDimensions,
     calculateVisibleRange,
     calculateMaxPosition,
+    isVisible,
   });
 
   const [state, setState] = createStore(getStateWithFunctions());
@@ -61,6 +62,10 @@ export default function createViewPortDimension(getState: () => ViewPortDimensio
     const size = calculatePixelValue(length);
 
     return { offset, size };
+  }
+
+  function isVisible({ offset, size }: { offset: number; size: number }) {
+    return offset + size > 0 && offset < state.pixelSize;
   }
 
   return state;
