@@ -15,7 +15,7 @@ const usePianoRoll = () => {
   const [snapToGrid, onSnapToGridChange] = createSignal(true);
 
   const [notes, onNotesChange] = createSignal<Note[]>([]);
-  const [duration, setDuration] = createSignal(0);
+  const [duration, onDurationChange] = createSignal(0);
 
   const onNoteChange = (index: number, note: Note) => {
     onNotesChange([...notes().slice(0, index), note, ...notes().splice(index + 1)]);
@@ -35,13 +35,14 @@ const usePianoRoll = () => {
   };
 
   createEffect(() => {
-    setDuration(
-      Math.max(
-        (notes()[notes().length - 1]?.ticks ?? 0) +
-          (notes()[notes().length - 1]?.durationTicks ?? 0),
-        ppq() * 4 * 4,
-      ),
+    const minDuration = Math.max(
+      (notes()[notes().length - 1]?.ticks ?? 0) + (notes()[notes().length - 1]?.durationTicks ?? 0),
+      ppq() * 4 * 4,
     );
+
+    if (duration() < minDuration) {
+      onDurationChange(minDuration);
+    }
   });
 
   return {
@@ -73,6 +74,7 @@ const usePianoRoll = () => {
     onRemoveNote,
 
     duration,
+    onDurationChange,
   };
 };
 

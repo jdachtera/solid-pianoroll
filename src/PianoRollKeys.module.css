@@ -4,11 +4,28 @@
   width: 50px;
 }
 
-.PianoRollKeys-Key {
+.Key {
+  border-width: 0px;
   position: absolute;
   box-sizing: border-box;
-  left: 0;
   width: 100%;
   border-color: #000;
   border-style: solid;
+  border-right-width: 1px;
+}
+
+.black {
+  background: black;
+}
+
+.white {
+  background: white;
+}
+
+.whiteAndNextIsWhite {
+  border-top-width: 0.1px;
+}
+
+.whiteAndPreviousIsWhite {
+  border-bottom-width: 0.1px;
 }

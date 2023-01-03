@@ -1,18 +1,23 @@
 import { createMemo, Index, Show } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
 import { blackKeys, keys } from "./PianoRollKeys";
+import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
+import styles from "./PianoRollGrid.module.css";
 
 const PianoRollGrid = () => {
   const context = usePianoRollContext();
+
+  const verticalViewPort = createMemo(() => useViewPortDimension("vertical"));
+  const horizontalViewPort = createMemo(() => useViewPortDimension("horizontal"));
 
   const measureTicks = createMemo(() => context.ppq * 4);
   const selectedGridDivisorTicks = createMemo(() => measureTicks() / context.gridDivision);
 
   function calculateVisibleGridDivisorTicks(value: number): number {
-    if (context.horizontalViewPort.getVisibleRange() / value > 100) {
+    if (horizontalViewPort().calculateVisibleRange() / value > 100) {
       return calculateVisibleGridDivisorTicks(value * 2);
     }
-    if (context.horizontalViewPort.getVisibleRange() / value < 30) {
+    if (horizontalViewPort().calculateVisibleRange() / value < 30) {
       return calculateVisibleGridDivisorTicks(value / 2);
     }
     return value;
@@ -24,7 +29,7 @@ const PianoRollGrid = () => {
 
   const gridArray = createMemo(() => {
     const numberOfLines = Math.ceil(
-      context.horizontalViewPort.getVisibleRange() / gridDivisorTicks() + 1,
+      horizontalViewPort().calculateVisibleRange() / gridDivisorTicks() + 1,
     );
     const startIndex = Math.floor(context.position / gridDivisorTicks());
 
@@ -35,91 +40,64 @@ const PianoRollGrid = () => {
   });
 
   return (
-    <div
-      class="PianoRoll-Grid-Container"
-      style={{
-        position: "absolute",
-        width: `${context.clientRect.width}px`,
-        height: `${context.clientRect.height}px`,
-      }}
-    >
-      <div
-        class="PianoRoll-Grid"
-        style={{
-          position: "relative",
-          width: `${context.clientRect.width}px`,
-          height: "100%",
+    <div class={styles.PianoRollGrid}>
+      <Index each={gridArray()}>
+        {(entry) => {
+          const virtualDimensions = createMemo(() =>
+            horizontalViewPort().calculatePixelDimensions(entry().ticks, gridDivisorTicks()),
+          );
+
+          return (
+            <Show when={virtualDimensions().size > 0}>
+              <div
+                class={styles["PianoRollGrid-Time"]}
+                style={{
+                  background:
+                    Math.ceil((entry().index + 1 * selectedGridDivisorTicks()) / measureTicks()) %
+                      2 ===
+                    0
+                      ? "#ddd"
+                      : "#ccc",
+                  left: `${virtualDimensions().offset}px`,
+                  width: `${virtualDimensions().size}px`,
+                  "border-left-color":
+                    (entry().index * gridDivisorTicks()) % selectedGridDivisorTicks() === 0
+                      ? "gray"
+                      : "#bbb",
+                }}
+              ></div>
+            </Show>
+          );
         }}
-      >
-        <Index each={gridArray()}>
-          {(entry) => {
+      </Index>
+      <Show when={!context.condensed}>
+        <Index each={keys}>
+          {(key) => {
             const virtualDimensions = createMemo(() =>
-              context.horizontalViewPort.getVirtualDimensions(entry().ticks, gridDivisorTicks()),
+              verticalViewPort().calculatePixelDimensions(127 - key().number, 1),
             );
 
             return (
               <Show when={virtualDimensions().size > 0}>
                 <div
-                  class="PianoRoll-Grid-Time"
+                  class={styles["PianoRollGrid-Key"]}
                   style={{
-                    "z-index": 1,
-                    position: "absolute",
-                    "box-sizing": "border-box",
-                    background:
-                      Math.ceil((entry().index + 1 * selectedGridDivisorTicks()) / measureTicks()) %
-                        2 ===
-                      0
-                        ? "#ddd"
-                        : "#ccc",
-                    top: `0px`,
-                    height: `100%`,
-                    left: `${virtualDimensions().offset}px`,
-                    width: `${virtualDimensions().size}px`,
-                    "border-left-style": "solid",
-                    "border-left-width": "0.5px",
-                    "border-left-color":
-                      (entry().index * gridDivisorTicks()) % selectedGridDivisorTicks() === 0
-                        ? "gray"
-                        : "#bbb",
+                    top: `${virtualDimensions().offset}px`,
+                    height: `${virtualDimensions().size}px`,
+                    width: "100%",
+                    "background-color": key().isBlack ? "rgba(0,0,0,0.2)" : "none",
+                    "border-width": `${
+                      !key().isBlack && !blackKeys.includes((key().number + 1) % 12) ? "0.1px" : 0
+                    } 1px ${
+                      !key().isBlack && !blackKeys.includes((key().number - 1) % 12) ? "0.1px" : 0
+                    } 0`,
                   }}
                 ></div>
               </Show>
             );
           }}
         </Index>
-        <Show when={!context.condensed}>
-          <Index each={keys}>
-            {(key) => {
-              const virtualDimensions = createMemo(() =>
-                context.verticalViewPort.getVirtualDimensions(127 - key().number, 1),
-              );
-
-              return (
-                <Show when={virtualDimensions().size > 0}>
-                  <div
-                    class="PianoRoll-Grid-Key"
-                    style={{
-                      position: "absolute",
-                      top: `${virtualDimensions().offset}px`,
-                      height: `${virtualDimensions().size}px`,
-                      width: "100%",
-                      "background-color": key().isBlack ? "rgba(0,0,0,0.2)" : "none",
-                      "border-style": "solid",
-                      "border-color": "gray",
-                      "border-width": `${
-                        !key().isBlack && !blackKeys.includes((key().number + 1) % 12) ? "0.1px" : 0
-                      } 1px ${
-                        !key().isBlack && !blackKeys.includes((key().number - 1) % 12) ? "0.1px" : 0
-                      } 0`,
-                      "z-index": 1,
-                    }}
-                  ></div>
-                </Show>
-              );
-            }}
-          </Index>
-        </Show>
-      </div>
+      </Show>
     </div>
   );
 };

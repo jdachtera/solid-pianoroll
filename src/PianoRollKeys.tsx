@@ -1,33 +1,35 @@
 import styles from "./PianoRollKeys.module.css";
 import { createMemo, Index, Show } from "solid-js";
-import { usePianoRollContext } from "./PianoRollContext";
+import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
 
 const PianoRollKeys = () => {
-  const context = usePianoRollContext();
+  const viewPort = createMemo(() => useViewPortDimension("vertical"));
 
   return (
     <div class={styles.PianoRollKeys}>
       <Index each={keys}>
         {(key) => {
           const virtualDimensions = createMemo(() =>
-            context.verticalViewPort.getVirtualDimensions(127 - key().number, 1),
+            viewPort().calculatePixelDimensions(127 - key().number, 1),
           );
 
           return (
             <Show when={virtualDimensions().size > 0}>
               <div
-                class={styles["PianoRollKeys-Key"]}
+                classList={{
+                  [styles["Key"]]: true,
+                  [styles["black"]]: key().isBlack,
+                  [styles["white"]]: !key().isBlack,
+                  [styles["whiteAndNextIsWhite"]]:
+                    !key().isBlack && !blackKeys.includes((key().number + 1) % 12),
+                  [styles["whiteAndPreviousIsWhite"]]:
+                    !key().isBlack && !blackKeys.includes((key().number - 1) % 12),
+                }}
                 title={key().name}
                 data-index={key().number % 12}
                 style={{
                   top: `${virtualDimensions().offset}px`,
                   height: `${virtualDimensions().size}px`,
-                  "background-color": key().isBlack ? "#000" : "#fff",
-                  "border-width": `${
-                    !key().isBlack && !blackKeys.includes((key().number + 1) % 12) ? "0.1px" : 0
-                  } 1px ${
-                    !key().isBlack && !blackKeys.includes((key().number - 1) % 12) ? "0.1px" : 0
-                  } 0`,
                 }}
               ></div>
             </Show>

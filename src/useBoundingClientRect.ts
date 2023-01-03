@@ -1,4 +1,4 @@
-import { Accessor, createEffect, createSignal, onCleanup, onMount } from "solid-js";
+import { Accessor, createEffect, createSignal } from "solid-js";
 
 export type ClientRect = Omit<DOMRect, "toJSON">;
 

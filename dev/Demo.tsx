@@ -1,26 +1,13 @@
-import {
-  Component,
-  createEffect,
-  createMemo,
-  createResource,
-  createSignal,
-  Index,
-  Show,
-  untrack,
-} from "solid-js";
+import { Component, createEffect, createResource, createSignal, Index, untrack } from "solid-js";
 
 import styles from "./Demo.module.css";
 import { PianoRoll, usePianoRoll } from "../src";
 import { Midi, MidiJSON } from "@tonejs/midi";
 import { GridDivision } from "src/PianoRoll";
 
-type Note = Pick<
-  ReturnType<Midi["tracks"][number]["notes"][number]["toJSON"]>,
-  "durationTicks" | "midi" | "ticks" | "velocity"
->;
-
 const Demo: Component = () => {
-  const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  const audioCtx = new (window.AudioContext ||
+    (window as unknown as { webkitAudioContext: AudioContext }).webkitAudioContext)();
 
   const gainNode = new GainNode(audioCtx, {
     gain: 0.5,
@@ -51,11 +38,22 @@ const Demo: Component = () => {
 
     pianoRoll.onPpqChange(midi.header.ppq);
     const track = midi.tracks.find(({ notes }) => notes.length);
+
     setSelectedTrack(track);
   });
 
   createEffect(() => {
     pianoRoll.onNotesChange(selectedTrack()?.notes ?? []);
+
+    const longestTrackLength = Math.max(
+      ...(parsedMidi()?.tracks.map(
+        (track) =>
+          (track.notes[track.notes.length - 1]?.ticks ?? 0) +
+          (track.notes[track.notes.length - 1]?.durationTicks ?? 0),
+      ) ?? [0]),
+    );
+
+    pianoRoll.onDurationChange(longestTrackLength);
   });
 
   return (
@@ -66,7 +64,7 @@ const Demo: Component = () => {
         <div style={{ "max-width": "300px" }}>
           <ul style={{ "margin-block": 0, "padding-inline": 0, margin: " 0 10px" }}>
             <Index each={parsedMidi()?.tracks}>
-              {(track, index) => (
+              {(track) => (
                 <li
                   style={{
                     "list-style": "none",
@@ -117,8 +115,6 @@ const Demo: Component = () => {
         </div>
       </div>
 
-      {/* */}
-
       <div>
         <h2>Info:</h2>
         <div>
@@ -131,10 +127,10 @@ const Demo: Component = () => {
           <select
             value={pianoRoll.gridDivision()}
             onChange={(event) => {
-              pianoRoll.onGridDivisionChange(
-                +event.currentTarget.options[event.currentTarget.selectedIndex]!
-                  .value as GridDivision,
-              );
+              const option = event.currentTarget.options[event.currentTarget.selectedIndex];
+              if (!option) return;
+
+              pianoRoll.onGridDivisionChange(+option.value as GridDivision);
             }}
           >
             <option value="1">1</option>

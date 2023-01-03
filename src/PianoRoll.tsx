@@ -1,16 +1,18 @@
 import styles from "./PianoRoll.module.css";
-import { Midi } from "@tonejs/midi";
 
-import { JSX, splitProps, createSignal } from "solid-js";
-import HorizontalZoomControl from "./HorizontalZoomControl";
+import { JSX, splitProps, createSignal, createMemo } from "solid-js";
 
 import { PianoRollContextProvider } from "./PianoRollContext";
 import PianoRollKeys from "./PianoRollKeys";
 import PianoRollNotes from "./PianoRollNotes";
-import ScrollContainer from "./ScrollContainer";
-import VerticalZoomControl from "./VerticalZoomControl";
+import ScrollContainer from "./viewport/ScrollContainer";
 import PianoRollGrid from "./PianoRollGrid";
 import { Note } from "./types";
+import { ScrollZoomViewPort as ScrollZoomViewPort } from "./viewport/ScrollZoomViewPort";
+import useBoundingClientRect from "./useBoundingClientRect";
+import { clamp } from "./viewport/createViewPortDimension";
+import VerticalZoomControl from "./viewport/VerticalZoomControl";
+import HorizontalZoomControl from "./viewport/HorizontalZoomControl";
 
 export type GridDivision = 1 | 2 | 4 | 8 | 16 | 32 | 64;
 
@@ -20,6 +22,8 @@ export type PianoRollProps = {
 
   gridDivision: GridDivision;
   snapToGrid: boolean;
+
+  condensed?: boolean;
 
   verticalPosition: number;
   verticalZoom: number;
@@ -58,29 +62,64 @@ const PianoRoll = (allProps: PianoRollProps & JSX.IntrinsicElements["div"]) => {
     "onRemoveNote",
   ]);
 
-  const [scrollContainer, setScrollContainer] = createSignal<HTMLDivElement>();
-  const [notesContainer, setNotesContainer] = createSignal<HTMLDivElement>();
+  const [scrollerRef, setScrollerRef] = createSignal<HTMLDivElement>();
+  const clientRect = useBoundingClientRect(scrollerRef);
+
+  const zoomFactor = 500;
+
+  const minZoom = createMemo(() => 1 / (zoomFactor / clientRect().width));
+  const maxZoom = createMemo(() => 500 * (zoomFactor / clientRect().width));
+
+  const minVerticalZoom = createMemo(() => 1 / (zoomFactor / clientRect().height));
+  const maxVerticalZoom = createMemo(() => 10 * (zoomFactor / clientRect().height));
 
   return (
-    <PianoRollContextProvider
-      {...contextProps}
-      scrollContainer={scrollContainer()}
-      notesContainer={notesContainer()}
-    >
+    <PianoRollContextProvider value={contextProps}>
       <div {...divProps} class={styles.PianoRoll}>
         <div class={styles.PianoRollContainer}>
-          <PianoRollKeys />
+          <ScrollZoomViewPort
+            dimensions={{
+              horizontal: () => ({
+                pixelOffset: clientRect().left,
+                pixelSize: clientRect().width,
+                position: contextProps.position,
+                range: contextProps.duration,
+                zoom: contextProps.zoom * (zoomFactor / clientRect().width),
+                onPositionChange: contextProps.onPositionChange,
+                onZoomChange: (zoom) =>
+                  contextProps.onZoomChange?.(
+                    clamp(zoom / (zoomFactor / clientRect().width), minZoom(), maxZoom()),
+                  ),
+              }),
+              vertical: () => ({
+                pixelOffset: clientRect().top,
+                pixelSize: clientRect().height,
+                position: contextProps.verticalPosition,
+                range: 128,
+                zoom: contextProps.verticalZoom * (zoomFactor / clientRect().height),
+                onPositionChange: contextProps.onVerticalPositionChange,
+                onZoomChange: (verticalZoom) =>
+                  contextProps.onVerticalZoomChange?.(
+                    clamp(
+                      verticalZoom / (zoomFactor / clientRect().height),
+                      minVerticalZoom(),
+                      maxVerticalZoom(),
+                    ),
+                  ),
+              }),
+            }}
+          >
+            <PianoRollKeys />
 
-          <div class={styles.PianoRollInnerContainer}>
-            <PianoRollNotes ref={setNotesContainer} />
-            <PianoRollGrid />
-            <ScrollContainer ref={setScrollContainer} />
-          </div>
+            <ScrollContainer ref={setScrollerRef}>
+              <PianoRollGrid />
+              <PianoRollNotes />
+            </ScrollContainer>
 
-          <VerticalZoomControl />
+            <VerticalZoomControl min={minVerticalZoom()} max={maxVerticalZoom()} />
+          </ScrollZoomViewPort>
         </div>
-
-        <HorizontalZoomControl />
+        <HorizontalZoomControl min={minZoom()} max={maxZoom()} />
       </div>
     </PianoRollContextProvider>
   );

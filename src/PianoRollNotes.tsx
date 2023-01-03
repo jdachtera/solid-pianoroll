@@ -1,8 +1,15 @@
-import { createMemo, Index, Ref, Show } from "solid-js";
+import { createMemo, createSignal, Index, Ref, Show } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
+import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
+import styles from "./PianoRollNotes.module.scss";
 
-const PianoRollNotes = (props: { ref: Ref<HTMLDivElement | undefined> }) => {
+type NoteDragMode = "trimStart" | "move" | "trimEnd" | undefined;
+
+const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
   const context = usePianoRollContext();
+
+  const verticalViewPort = createMemo(() => useViewPortDimension("vertical"));
+  const horizontalViewPort = createMemo(() => useViewPortDimension("horizontal"));
 
   const gridDivisionTicks = createMemo(() => (context.ppq * 4) / context.gridDivision);
 
@@ -11,127 +18,176 @@ const PianoRollNotes = (props: { ref: Ref<HTMLDivElement | undefined> }) => {
       ? Math.round(value / gridDivisionTicks()) * gridDivisionTicks()
       : value;
 
+  const insertOrUpdateNote = (event: MouseEvent) => {
+    const position = horizontalViewPort().calculatePosition(event.clientX);
+    const midi = 127 - Math.floor(verticalViewPort().calculatePosition(event.clientY));
+    const eventPositionTicks = Math.floor(position / gridDivisionTicks()) * gridDivisionTicks();
+    const velocity = 127;
+
+    const existingNote = newNote();
+
+    const ticks = existingNote?.ticks ?? eventPositionTicks;
+    const durationTicks = existingNote?.ticks
+      ? eventPositionTicks - existingNote?.ticks
+      : gridDivisionTicks();
+
+    const note = { midi, ticks, durationTicks, velocity };
+
+    if (existingNote) {
+      context.onNoteChange?.(newNoteIndex(), note);
+      return newNoteIndex();
+    } else {
+      return context.onInsertNote?.(note) ?? -1;
+    }
+  };
+
+  const [isDragging, setIsDragging] = createSignal(false);
+  const [noteDragMode, setNoteDragMode] = createSignal<NoteDragMode>();
+  const [newNoteIndex, setNewNoteIndex] = createSignal(-1);
+  const [isMouseDown, setIsMouseDown] = createSignal(false);
+
+  const newNote = createMemo(() => context.notes[newNoteIndex()]);
+
+  const getClasses = (noteDragMode: NoteDragMode) => {
+    return noteDragMode ? [styles.Note, styles[noteDragMode]] : [styles.Note];
+  };
+
   return (
     <div
-      class="PianoRoll-Notes-Container"
-      style={{
-        position: "absolute",
-        width: `${context.clientRect.width}px`,
-        height: `${context.clientRect.height}px`,
+      class={styles.PianoRollNotes}
+      ref={props.ref}
+      onMouseDown={() => {
+        console.log("down");
+        setIsMouseDown(true);
+      }}
+      onMouseMove={(event) => {
+        if (isDragging()) return;
+
+        if (!isMouseDown()) {
+          setNoteDragMode(undefined);
+          return;
+        }
+
+        const index = insertOrUpdateNote(event);
+
+        console.log({ index });
+
+        setNewNoteIndex(index);
+      }}
+      onMouseUp={(event) => {
+        setIsMouseDown(false);
+        if (!event.altKey) return;
+        insertOrUpdateNote(event);
+      }}
+      onDblClick={(event) => {
+        insertOrUpdateNote(event);
+      }}
+      onClick={(event) => {
+        if (newNote()) {
+          setNewNoteIndex(-1);
+          return;
+        }
+        if (!event.altKey) return;
+        insertOrUpdateNote(event);
       }}
     >
-      <div
-        class="PianoRoll-Notes"
-        ref={props.ref}
-        style={{
-          position: "relative",
-          width: `${context.clientRect.width}px`,
-          height: "100%",
-        }}
-      >
-        <Index each={context.notes}>
-          {(note, index) => {
-            const horizontalVirtualDimensions = createMemo(() =>
-              context.verticalViewPort.getVirtualDimensions(127 - note().midi, 1),
-            );
+      <Index each={context.notes}>
+        {(note, index) => {
+          const verticalVirtualDimensionss = createMemo(() =>
+            verticalViewPort().calculatePixelDimensions(127 - note().midi, 1),
+          );
 
-            const verticalVirtualDimensions = createMemo(() =>
-              context.horizontalViewPort.getVirtualDimensions(note().ticks, note().durationTicks),
-            );
+          const horizontalDimensions = createMemo(() =>
+            horizontalViewPort().calculatePixelDimensions(note().ticks, note().durationTicks),
+          );
 
-            return (
-              <Show
-                when={!!horizontalVirtualDimensions().size && !!verticalVirtualDimensions().size}
-              >
-                <div
-                  class="PianoRoll-Note"
-                  onMouseMove={(event) => {
-                    if (context.isDragging) return;
+          return (
+            <Show when={!!verticalVirtualDimensionss().size && !!horizontalDimensions().size}>
+              <div
+                class={getClasses(noteDragMode()).join(" ")}
+                onMouseMove={(event) => {
+                  if (isDragging()) return;
+                  event.stopPropagation();
 
-                    const relativeX = context.horizontalViewPort.getScaledValue(
-                      context.horizontalViewPort.getPosition(event.clientX),
+                  const relativeX = horizontalViewPort().calculatePixelValue(
+                    horizontalViewPort().calculatePosition(event.clientX),
+                  );
+                  const noteStartX = horizontalViewPort().calculatePixelValue(note().ticks);
+                  const noteEndX = horizontalViewPort().calculatePixelValue(
+                    note().ticks + note().durationTicks,
+                  );
+
+                  setNoteDragMode(
+                    relativeX - noteStartX < 3
+                      ? "trimStart"
+                      : noteEndX - relativeX < 3
+                      ? "trimEnd"
+                      : "move",
+                  );
+                }}
+                onDblClick={(event) => {
+                  event.stopPropagation();
+                  context.onRemoveNote?.(index);
+                }}
+                onMouseDown={(event) => {
+                  event.stopPropagation();
+
+                  setIsDragging(true);
+                  const initialPosition = horizontalViewPort().calculatePosition(event.clientX);
+                  const diffPosition = initialPosition - note().ticks;
+
+                  const handleMouseMove = (mouseMoveEvent: MouseEvent) => {
+                    const ticks = snapValueToGridIfEnabled(
+                      Math.max(
+                        horizontalViewPort().calculatePosition(mouseMoveEvent.clientX) -
+                          diffPosition,
+                        0,
+                      ),
+                      mouseMoveEvent.altKey,
                     );
-                    const noteStartX = context.horizontalViewPort.getScaledValue(note().ticks);
-                    const noteEndX = context.horizontalViewPort.getScaledValue(
-                      note().ticks + note().durationTicks,
-                    );
 
-                    context.onNoteDragModeChange(
-                      relativeX - noteStartX < 3
-                        ? "trimStart"
-                        : noteEndX - relativeX < 3
-                        ? "trimEnd"
-                        : "move",
-                    );
-                  }}
-                  onDblClick={() => {
-                    context.onRemoveNote?.(index);
-                  }}
-                  onMouseDown={(event) => {
-                    context.onIsDraggingChange(true);
-                    const initialPosition = context.horizontalViewPort.getPosition(event.clientX);
-                    const diffPosition = initialPosition - note().ticks;
-
-                    const handleMouseMove = (mouseMoveEvent: MouseEvent) => {
-                      const ticks = snapValueToGridIfEnabled(
-                        Math.max(
-                          context.horizontalViewPort.getPosition(mouseMoveEvent.clientX) -
-                            diffPosition,
-                          0,
+                    context.onNoteChange?.(index, {
+                      ...note(),
+                      ...(noteDragMode() === "move" && {
+                        midi: Math.round(
+                          127 - verticalViewPort().calculatePosition(mouseMoveEvent.clientY),
                         ),
-                        mouseMoveEvent.altKey,
-                      );
-
-                      context.onNoteChange?.(index, {
-                        ...note(),
-                        ...(context.noteDragMode === "move" && {
-                          midi: Math.round(
-                            127 - context.verticalViewPort.getPosition(mouseMoveEvent.clientY),
-                          ),
-                        }),
-                        ...((context.noteDragMode === "move" ||
-                          context.noteDragMode === "trimStart") && {
-                          ticks,
-                        }),
-                        ...(context.noteDragMode === "trimStart" && {
-                          durationTicks: note().durationTicks + note().ticks - ticks,
-                        }),
-                        ...(context.noteDragMode === "trimEnd" && {
-                          durationTicks: snapValueToGridIfEnabled(
-                            context.horizontalViewPort.getPosition(mouseMoveEvent.clientX) -
-                              note().ticks,
-                            mouseMoveEvent.altKey,
-                          ),
-                        }),
-                      });
-                    };
-                    const handleMouseUp = () => {
-                      context.onIsDraggingChange(false);
-                      window.removeEventListener("mousemove", handleMouseMove);
-                      window.removeEventListener("mouseup", handleMouseUp);
-                    };
-                    window.addEventListener("mousemove", handleMouseMove);
-                    window.addEventListener("mouseup", handleMouseUp);
-                  }}
-                  style={{
-                    "z-index": 2,
-                    position: "absolute",
-                    "box-sizing": "border-box",
-                    top: `${horizontalVirtualDimensions().offset}px`,
-                    height: `${horizontalVirtualDimensions().size}px`,
-                    left: `${verticalVirtualDimensions().offset}px`,
-                    width: `${verticalVirtualDimensions().size}px`,
-                    "border-width": "0.5px",
-                    "border-style": "solid",
-                    "background-color": `rgba(255,0,0, ${(128 + note().velocity) / 256})`,
-                    "border-color": "#a00",
-                  }}
-                ></div>
-              </Show>
-            );
-          }}
-        </Index>
-      </div>
+                      }),
+                      ...((noteDragMode() === "move" || noteDragMode() === "trimStart") && {
+                        ticks,
+                      }),
+                      ...(noteDragMode() === "trimStart" && {
+                        durationTicks: note().durationTicks + note().ticks - ticks,
+                      }),
+                      ...(noteDragMode() === "trimEnd" && {
+                        durationTicks: snapValueToGridIfEnabled(
+                          horizontalViewPort().calculatePosition(mouseMoveEvent.clientX) -
+                            note().ticks,
+                          mouseMoveEvent.altKey,
+                        ),
+                      }),
+                    });
+                  };
+                  const handleMouseUp = () => {
+                    setIsDragging(false);
+                    window.removeEventListener("mousemove", handleMouseMove);
+                    window.removeEventListener("mouseup", handleMouseUp);
+                  };
+                  window.addEventListener("mousemove", handleMouseMove);
+                  window.addEventListener("mouseup", handleMouseUp);
+                }}
+                style={{
+                  "background-color": `rgba(255,0,0, ${(128 + note().velocity) / 256})`,
+                  top: `${verticalVirtualDimensionss().offset}px`,
+                  height: `${verticalVirtualDimensionss().size}px`,
+                  left: `${horizontalDimensions().offset}px`,
+                  width: `${horizontalDimensions().size}px`,
+                }}
+              ></div>
+            </Show>
+          );
+        }}
+      </Index>
     </div>
   );
 };
