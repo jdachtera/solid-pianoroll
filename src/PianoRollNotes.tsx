@@ -58,9 +58,12 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
     <div
       class={styles.PianoRollNotes}
       ref={props.ref}
-      onMouseDown={() => {
+      onMouseDown={(event) => {
         console.log("down");
         setIsMouseDown(true);
+        const index = insertOrUpdateNote(event);
+
+        setNewNoteIndex(index);
       }}
       onMouseMove={(event) => {
         if (isDragging()) return;
