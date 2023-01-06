@@ -1,4 +1,4 @@
-import { createContext, splitProps, useContext } from "solid-js";
+import { createContext, JSX, splitProps, useContext } from "solid-js";
 
 import { PianoRollProps } from "./PianoRoll";
 
@@ -14,7 +14,7 @@ export const usePianoRollContext = () => {
   return context;
 };
 
-export const splitContextProps = (allProps: PianoRollProps) =>
+export const splitContextProps = (allProps: PianoRollProps & JSX.IntrinsicElements["div"]) =>
   splitProps(allProps, [
     "condensed",
     "duration",

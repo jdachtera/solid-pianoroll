@@ -57,81 +57,98 @@ const MultiTrackPianoRoll = (allProps: MultiTrackPianoRollProps) => {
   const maxVerticalZoom = createMemo(() => 10 * (zoomFactor / clientRect().height));
 
   return (
-    <PianoRollContextProvider value={{ ...contextProps }}>
-      <ScrollZoomViewPort
-        dimensions={{
-          horizontal: () => ({
-            pixelOffset: clientRect().left,
-            pixelSize: clientRect().width,
-            position: contextProps.position,
-            range: contextProps.duration,
-            zoom: contextProps.zoom * (zoomFactor / clientRect().width),
-            onPositionChange: contextProps.onPositionChange,
-            onZoomChange: (zoom) =>
-              contextProps.onZoomChange?.(
-                clamp(zoom / (zoomFactor / clientRect().width), minZoom(), maxZoom()),
-              ),
-          }),
-          vertical: () => ({
-            pixelOffset: clientRect().top,
-            pixelSize: clientRect().height,
-            position: contextProps.verticalPosition,
-            range: 128,
-            zoom: contextProps.verticalZoom * (zoomFactor / clientRect().height),
-            onPositionChange: contextProps.onVerticalPositionChange,
-            onZoomChange: (verticalZoom) =>
-              contextProps.onVerticalZoomChange?.(
-                clamp(
-                  verticalZoom / (zoomFactor / clientRect().height),
-                  minVerticalZoom(),
-                  maxVerticalZoom(),
+    <div
+      {...divProps}
+      style={{
+        display: "flex",
+        flex: 1,
+        height: "100%",
+        "flex-direction": "row",
+        overflow: "hidden",
+        ...(typeof divProps.style === "object" && divProps.style),
+      }}
+    >
+      <PianoRollContextProvider value={{ ...contextProps }}>
+        <ScrollZoomViewPort
+          dimensions={{
+            horizontal: () => ({
+              pixelOffset: clientRect().left,
+              pixelSize: clientRect().width,
+              position: contextProps.position,
+              range: contextProps.duration,
+              zoom: contextProps.zoom * (zoomFactor / clientRect().width),
+              onPositionChange: contextProps.onPositionChange,
+              onZoomChange: (zoom) =>
+                contextProps.onZoomChange?.(
+                  clamp(zoom / (zoomFactor / clientRect().width), minZoom(), maxZoom()),
                 ),
-              ),
-          }),
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            flex: 1,
-            height: "100%",
-            "flex-direction": "row",
+            }),
+            vertical: () => ({
+              pixelOffset: clientRect().top,
+              pixelSize: clientRect().height,
+              position: contextProps.verticalPosition,
+              range: 128,
+              zoom: contextProps.verticalZoom * (zoomFactor / clientRect().height),
+              onPositionChange: contextProps.onVerticalPositionChange,
+              onZoomChange: (verticalZoom) =>
+                contextProps.onVerticalZoomChange?.(
+                  clamp(
+                    verticalZoom / (zoomFactor / clientRect().height),
+                    minVerticalZoom(),
+                    maxVerticalZoom(),
+                  ),
+                ),
+            }),
           }}
         >
-          <ul style={{ "margin-block-start": 0, "padding-inline-start": 0, width: "150px" }}>
-            <Index each={allProps.tracks}>
-              {(track) => (
-                <li
-                  style={{
-                    width: "150px",
-                    height: "30px",
-                    "list-style": "none",
-                    display: "flex",
-                    "align-items": "center",
-                    "border-top": "1px black solid",
-                    background: track() === allProps.selectedTrack ? "lightgray" : "none",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => {
-                    if (track() === allProps.selectedTrack) {
-                      allProps.onSelectedTrackChange(undefined);
-                    } else {
-                      allProps.onSelectedTrackChange(track());
-                    }
-                  }}
-                >
-                  {track().name}
-                </li>
-              )}
-            </Index>
-          </ul>
+          <div
+            style={{
+              width: "250px",
+              display: "flex",
+              "flex-direction": "row",
+            }}
+          >
+            <ul
+              style={{
+                "margin-block-start": 0,
+                "padding-inline-start": 0,
+                flex: 1,
+                position: "relative",
+              }}
+            >
+              <Index each={allProps.tracks}>
+                {(track) => (
+                  <li
+                    style={{
+                      width: "100%",
+                      height: "30px",
+                      "list-style": "none",
+                      display: "flex",
+                      "align-items": "center",
+                      "border-top": "1px black solid",
+                      background: track() === allProps.selectedTrack ? "lightgray" : "none",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => {
+                      if (track() === allProps.selectedTrack) {
+                        allProps.onSelectedTrackChange(undefined);
+                      } else {
+                        allProps.onSelectedTrackChange(track());
+                      }
+                    }}
+                  >
+                    {track().name}
+                  </li>
+                )}
+              </Index>
+            </ul>
+            <Show when={!condensed()}>
+              <PianoRollKeys />
+            </Show>
+          </div>
 
           <div class={styles.PianoRoll} style={{ flex: 1 }}>
             <div class={styles.PianoRollContainer}>
-              <Show when={!condensed()}>
-                <PianoRollKeys />
-              </Show>
-
               <ScrollContainer ref={setScrollerRef}>
                 <ul
                   style={{
@@ -201,9 +218,9 @@ const MultiTrackPianoRoll = (allProps: MultiTrackPianoRollProps) => {
               onInput={(event) => contextProps.onZoomChange?.(event.currentTarget.valueAsNumber)}
             />
           </div>
-        </div>
-      </ScrollZoomViewPort>
-    </PianoRollContextProvider>
+        </ScrollZoomViewPort>
+      </PianoRollContextProvider>
+    </div>
   );
 };
 
