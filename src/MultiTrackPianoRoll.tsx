@@ -7,6 +7,7 @@ import {
   createEffect,
   splitProps,
   Show,
+  ParentProps,
 } from "solid-js";
 import styles from "./PianoRoll.module.css";
 import HorizontalZoomControl from "./viewport/HorizontalZoomControl";
@@ -36,7 +37,7 @@ export type MultiTrackPianoRollProps = Omit<
   onSelectedTrackChange: (track?: TrackJSON) => void;
 } & JSX.IntrinsicElements["div"];
 
-const MultiTrackPianoRoll = (allProps: MultiTrackPianoRollProps) => {
+const MultiTrackPianoRoll = (allProps: ParentProps<MultiTrackPianoRollProps>) => {
   const condensed = createMemo(() => !allProps.selectedTrack);
 
   const [ownProps, restProps] = splitProps(allProps, ["tracks", "selectedTrack"]);
@@ -150,6 +151,7 @@ const MultiTrackPianoRoll = (allProps: MultiTrackPianoRollProps) => {
           <div class={styles.PianoRoll} style={{ flex: 1 }}>
             <div class={styles.PianoRollContainer}>
               <ScrollContainer ref={setScrollerRef}>
+                {allProps.children}
                 <ul
                   style={{
                     margin: 0,

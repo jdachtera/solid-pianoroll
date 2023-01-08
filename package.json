@@ -44,7 +44,8 @@
     "typecheck": "tsc --noEmit"
   },
   "optionalDependencies": {
-    "@tonejs/midi": "^2.0.28"
+    "@tonejs/midi": "^2.0.28",
+    "tone": "^14.7.77"
   },
   "peerDependencies": {
     "solid-js": ">=1.0.0"

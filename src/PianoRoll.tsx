@@ -1,6 +1,6 @@
 import styles from "./PianoRoll.module.css";
 
-import { JSX, createSignal, createMemo } from "solid-js";
+import { JSX, createSignal, createMemo, ParentProps } from "solid-js";
 
 import { PianoRollContextProvider, splitContextProps } from "./PianoRollContext";
 import PianoRollKeys from "./PianoRollKeys";
@@ -42,7 +42,7 @@ export type PianoRollProps = {
   onRemoveNote?: (index: number) => void;
 };
 
-const PianoRoll = (allProps: PianoRollProps & JSX.IntrinsicElements["div"]) => {
+const PianoRoll = (allProps: ParentProps<PianoRollProps & JSX.IntrinsicElements["div"]>) => {
   const [contextProps, divProps] = splitContextProps(allProps);
 
   const [scrollerRef, setScrollerRef] = createSignal<HTMLDivElement>();
@@ -95,6 +95,7 @@ const PianoRoll = (allProps: PianoRollProps & JSX.IntrinsicElements["div"]) => {
             <PianoRollKeys />
 
             <ScrollContainer ref={setScrollerRef}>
+              {allProps.children}
               <PianoRollGrid />
               <PianoRollNotes />
             </ScrollContainer>

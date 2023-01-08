@@ -21,6 +21,7 @@ export type ViewPortDimensionState = {
 export default function createViewPortDimension(getState: () => ViewPortDimensionState) {
   const getStateWithFunctions = () => ({
     ...getState(),
+    calculatePixelOffset,
     calculatePixelValue,
     calculatePosition,
     calculatePixelDimensions,

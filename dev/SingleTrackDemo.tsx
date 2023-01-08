@@ -1,8 +1,9 @@
-import { PianoRoll, useNotes, usePianoRoll } from "../src";
+import { PianoRoll, PlayHead, useNotes, usePianoRoll } from "../src";
 
 const SingleTrackDemo = (props: {
   notes: ReturnType<typeof useNotes>;
   pianoRoll: ReturnType<typeof usePianoRoll>;
+  playHeadPosition?: number;
 }) => {
   return (
     <>
@@ -27,7 +28,9 @@ const SingleTrackDemo = (props: {
         onInsertNote={props.notes.onInsertNote}
         onRemoveNote={props.notes.onRemoveNote}
         condensed={props.pianoRoll.condensed()}
-      />
+      >
+        <PlayHead playHeadPosition={props.playHeadPosition} style={{ "z-index": 3 }} />
+      </PianoRoll>
     </>
   );
 };

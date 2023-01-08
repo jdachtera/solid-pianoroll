@@ -1,4 +1,5 @@
-import { Midi, MidiJSON } from "@tonejs/midi";
+import { Midi, MidiJSON, TrackJSON } from "@tonejs/midi";
+import * as Tone from "tone";
 import {
   Component,
   createEffect,
@@ -14,15 +15,27 @@ import { GridDivision } from "src/PianoRoll";
 import styles from "./Demo.module.css";
 import MultiTrackDemo from "./MultiTrackDemo";
 import SingleTrackDemo from "./SingleTrackDemo";
+import { isNumber, PolySynth, TransportTime } from "tone";
 
 const Demo: Component = () => {
   const [demo, setDemo] = createSignal("singleTrack");
 
-  const [url, setUrl] = createSignal("/MIDI_sample.mid");
+  const [url, setUrl] = createSignal("./examples_bach_846.mid");
   const [inputUrl, setInputUrl] = createSignal(untrack(() => url()));
+
+  const [playHeadPosition, setPlayHeadPosition] = createSignal(0);
+  const [isPlaying, setIsPlaying] = createSignal(false);
+  const [synths, setSynths] = createSignal<PolySynth[]>();
+
   const [parsedMidi] = createResource(url, async (url) => {
     const midi = await Midi.fromUrl(url);
     return midi.toJSON();
+  });
+
+  const [tracks, setTracks] = createSignal<TrackJSON[]>();
+
+  createEffect(() => {
+    setTracks(parsedMidi()?.tracks);
   });
 
   const [selectedTrack, setSelectedTrack] = createSignal<MidiJSON["tracks"][number]>();
@@ -53,6 +66,76 @@ const Demo: Component = () => {
 
     pianoRoll.onDurationChange(longestTrackLength);
   });
+  const transport = Tone.getTransport();
+
+  transport.stop();
+
+  createEffect(() => {
+    transport.PPQ = parsedMidi()?.header.ppq ?? transport.PPQ;
+    transport.bpm.value = parsedMidi()?.header.tempos[0]?.bpm ?? transport.bpm.value;
+  });
+
+  let animationFrame: number | undefined;
+
+  const updatePlayHeadPosition = () => {
+    setPlayHeadPosition(TransportTime(transport.seconds).toTicks());
+    animationFrame = requestAnimationFrame(updatePlayHeadPosition);
+  };
+
+  createEffect(() => {
+    if (isNumber(animationFrame)) {
+      cancelAnimationFrame(animationFrame);
+    }
+
+    if (isPlaying()) {
+      updatePlayHeadPosition();
+    }
+  });
+
+  createEffect(() => {
+    if (isPlaying()) {
+      setSynths(
+        parsedMidi()?.tracks.map((track) => {
+          //create a synth for each track
+          const synth = new Tone.PolySynth(Tone.Synth, {
+            envelope: {
+              attack: 0.02,
+              decay: 0.1,
+              sustain: 0.3,
+              release: 1,
+            },
+          }).toDestination();
+
+          //schedule all of the events
+          track.notes.forEach((note) => {
+            transport.schedule((time) => {
+              synth.triggerAttackRelease(
+                Tone.Midi(note.midi).toFrequency(),
+                `${note.durationTicks}i`,
+                time,
+                note.velocity,
+              );
+            }, `${note.ticks}i`);
+          });
+
+          return synth;
+        }) ?? [],
+      );
+      transport.start();
+    }
+  });
+
+  createEffect(() => {
+    if (!isPlaying()) {
+      synths()?.forEach((synth) => {
+        synth.releaseAll();
+      });
+      transport.cancel();
+      setSynths(undefined);
+
+      transport.pause();
+    }
+  });
 
   return (
     <div class={styles.Demo}>
@@ -75,7 +158,11 @@ const Demo: Component = () => {
       >
         <Switch>
           <Match when={demo() === "singleTrack"}>
-            <SingleTrackDemo pianoRoll={pianoRoll} notes={notes} />
+            <SingleTrackDemo
+              pianoRoll={pianoRoll}
+              notes={notes}
+              playHeadPosition={playHeadPosition()}
+            />
           </Match>
           <Match when={demo() === "multiTrack"}>
             <MultiTrackDemo
@@ -96,6 +183,9 @@ const Demo: Component = () => {
           <button onClick={() => setUrl(inputUrl())}>Update</button>
         </div>
         <div>
+          <button onClick={() => setIsPlaying(!isPlaying())}>
+            {isPlaying() ? "Stop" : "Play"}
+          </button>
           <label>Grid:</label>
           <select
             value={pianoRoll.gridDivision()}
