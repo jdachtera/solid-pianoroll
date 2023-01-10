@@ -35,7 +35,7 @@ const Demo: Component = () => {
   });
 
   const [tracks, setTracks] = createSignal<Track[]>([]);
-  const [selectedTrackIndex, setSelectedTrackIndex] = createSignal<number>(0);
+  const [selectedTrackIndex, setSelectedTrackIndex] = createSignal<number>(-1);
   const selectedTrack = createMemo(() => tracks()[selectedTrackIndex()]);
 
   const pianoRoll = usePianoRoll();
