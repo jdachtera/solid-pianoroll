@@ -10,7 +10,7 @@ const usePianoRoll = () => {
 
   const [zoom, onZoomChange] = createSignal(10);
   const [verticalZoom, onVerticalZoomChange] = createSignal(5);
-  const [verticalPosition, onVerticalPositionChange] = createSignal(64);
+  const [verticalPosition, onVerticalPositionChange] = createSignal(44);
 
   const [gridDivision, onGridDivisionChange] = createSignal<GridDivision>(4);
   const [snapToGrid, onSnapToGridChange] = createSignal(true);
