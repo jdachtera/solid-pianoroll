@@ -18,7 +18,6 @@ import PianoRollNotes from "./PianoRollNotes";
 import ScrollContainer from "./viewport/ScrollContainer";
 import PianoRollGrid from "./PianoRollGrid";
 
-import { TrackJSON } from "@tonejs/midi";
 import useNotes from "./useNotes";
 import { PianoRollProps } from "./PianoRoll";
 import useBoundingClientRect from "./useBoundingClientRect";
@@ -27,23 +26,34 @@ import { clamp } from "./viewport/createViewPortDimension";
 import { createStore } from "solid-js/store";
 import PianoRollKeys from "./PianoRollKeys";
 import VerticalZoomControl from "./viewport/VerticalZoomControl";
+import { Note, Track } from "./types";
 
 export type MultiTrackPianoRollProps = Omit<
   PianoRollProps,
-  "notes" | "onNoteChange" | "onInsertNote" | "onRemoveNote" | "condensed"
+  "condensed" | "notes" | "onNoteChange" | "onInsertNote" | "onRemoveNote"
 > & {
-  tracks: TrackJSON[];
-  selectedTrack?: TrackJSON;
-  onSelectedTrackChange: (track?: TrackJSON) => void;
+  tracks: Track[];
+  selectedTrackIndex: number;
+  onSelectedTrackIndexChange: (trackIndex: number) => void;
+  onNoteChange?: (trackIndex: number, index: number, note: Note) => void;
+  onInsertNote?: (trackIndex: number, note: Note) => number;
+  onRemoveNote?: (trackIndex: number, index: number) => void;
 } & JSX.IntrinsicElements["div"];
 
 const MultiTrackPianoRoll = (allProps: ParentProps<MultiTrackPianoRollProps>) => {
-  const condensed = createMemo(() => !allProps.selectedTrack);
+  const selectedTrack = createMemo(() => allProps.tracks[allProps.selectedTrackIndex]);
+  const condensed = createMemo(() => !selectedTrack());
 
-  const [ownProps, restProps] = splitProps(allProps, ["tracks", "selectedTrack"]);
+  const [ownProps, restProps] = splitProps(allProps, ["tracks", "selectedTrackIndex"]);
 
   const [contextProps, divProps] = splitContextProps(
-    mergeProps(restProps, { notes: [], condensed: false }),
+    mergeProps(restProps, {
+      notes: [],
+      condensed: false,
+      onNoteChange: () => undefined,
+      onInsertNote: () => -1,
+      onRemoveNote: () => undefined,
+    }),
   );
 
   const [scrollerRef, setScrollerRef] = createSignal<HTMLDivElement>();
@@ -118,7 +128,7 @@ const MultiTrackPianoRoll = (allProps: ParentProps<MultiTrackPianoRollProps>) =>
               }}
             >
               <Index each={allProps.tracks}>
-                {(track) => (
+                {(track, noteIndex) => (
                   <li
                     style={{
                       width: "100%",
@@ -127,14 +137,14 @@ const MultiTrackPianoRoll = (allProps: ParentProps<MultiTrackPianoRollProps>) =>
                       display: "flex",
                       "align-items": "center",
                       "border-top": "1px black solid",
-                      background: track() === allProps.selectedTrack ? "lightgray" : "none",
+                      background: noteIndex === allProps.selectedTrackIndex ? "lightgray" : "none",
                       cursor: "pointer",
                     }}
                     onClick={() => {
-                      if (track() === allProps.selectedTrack) {
-                        allProps.onSelectedTrackChange(undefined);
+                      if (noteIndex === allProps.selectedTrackIndex) {
+                        allProps.onSelectedTrackIndexChange(-1);
                       } else {
-                        allProps.onSelectedTrackChange(track());
+                        allProps.onSelectedTrackIndexChange(noteIndex);
                       }
                     }}
                   >
@@ -160,7 +170,7 @@ const MultiTrackPianoRoll = (allProps: ParentProps<MultiTrackPianoRollProps>) =>
                   }}
                 >
                   <Index each={allProps.tracks}>
-                    {(track) => {
+                    {(track, trackIndex) => {
                       const notes = useNotes();
 
                       createEffect(() => {
@@ -173,17 +183,19 @@ const MultiTrackPianoRoll = (allProps: ParentProps<MultiTrackPianoRollProps>) =>
                         setContext({
                           ...contextProps,
                           condensed: condensed(),
-                          notes: notes.notes(),
-                          onNoteChange: notes.onNoteChange,
-                          onInsertNote: notes.onInsertNote,
-                          onRemoveNote: notes.onRemoveNote,
+                          notes: track()?.notes,
+                          onNoteChange: (noteIndex, note) =>
+                            allProps?.onNoteChange?.(trackIndex, noteIndex, note),
+                          onInsertNote: (note) => allProps.onInsertNote?.(trackIndex, note) ?? -1,
+                          onRemoveNote: (noteIndex) =>
+                            allProps.onRemoveNote?.(trackIndex, noteIndex),
                         });
                       });
 
                       const verticalViewPort = useViewPortDimension("vertical");
 
                       return (
-                        <Show when={condensed() || allProps.selectedTrack === track()}>
+                        <Show when={condensed() || allProps.selectedTrackIndex === trackIndex}>
                           <PianoRollContextProvider value={context}>
                             <li
                               style={{

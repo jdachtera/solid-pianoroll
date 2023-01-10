@@ -14,12 +14,18 @@ const PianoRollGrid = () => {
   const selectedGridDivisorTicks = createMemo(() => measureTicks() / context.gridDivision);
 
   function calculateVisibleGridDivisorTicks(value: number): number {
-    if (horizontalViewPort().calculateVisibleRange() / value > 100) {
+    const visibleRange = horizontalViewPort().calculateVisibleRange();
+
+    if (visibleRange <= 0) return 0;
+
+    if (visibleRange / value > 100) {
       return calculateVisibleGridDivisorTicks(value * 2);
     }
-    if (horizontalViewPort().calculateVisibleRange() / value < 30) {
+
+    if (visibleRange / value < 30) {
       return calculateVisibleGridDivisorTicks(value / 2);
     }
+
     return value;
   }
 

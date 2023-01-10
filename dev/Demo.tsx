@@ -1,21 +1,23 @@
-import { Midi, MidiJSON, TrackJSON } from "@tonejs/midi";
+import { Midi } from "@tonejs/midi";
 import * as Tone from "tone";
 import {
   Component,
   createEffect,
+  createMemo,
   createResource,
   createSignal,
   Match,
   Switch,
   untrack,
 } from "solid-js";
-import { useNotes, usePianoRoll } from "../src";
+import { usePianoRoll } from "../src";
 import { GridDivision } from "src/PianoRoll";
 
 import styles from "./Demo.module.css";
-import MultiTrackDemo from "./MultiTrackDemo";
 import SingleTrackDemo from "./SingleTrackDemo";
 import { isNumber, PolySynth, TransportTime } from "tone";
+import { Note, Track } from "src/types";
+import MultiTrackDemo from "./MultiTrackDemo";
 
 const Demo: Component = () => {
   const [demo, setDemo] = createSignal("singleTrack");
@@ -32,48 +34,81 @@ const Demo: Component = () => {
     return midi.toJSON();
   });
 
-  const [tracks, setTracks] = createSignal<TrackJSON[]>();
-
-  createEffect(() => {
-    setTracks(parsedMidi()?.tracks);
-  });
-
-  const [selectedTrack, setSelectedTrack] = createSignal<MidiJSON["tracks"][number]>();
+  const [tracks, setTracks] = createSignal<Track[]>([]);
+  const [selectedTrackIndex, setSelectedTrackIndex] = createSignal<number>(0);
+  const selectedTrack = createMemo(() => tracks()[selectedTrackIndex()]);
 
   const pianoRoll = usePianoRoll();
-  const notes = useNotes();
 
   createEffect(() => {
     const midi = parsedMidi();
     if (!midi) return;
 
+    transport.PPQ = midi.header.ppq ?? transport.PPQ;
+    transport.bpm.value = midi.header.tempos[0]?.bpm ?? transport.bpm.value;
     pianoRoll.onPpqChange(midi.header.ppq);
-    const track = midi.tracks.find(({ notes }) => notes.length);
 
-    setSelectedTrack(track);
+    setTracks(midi.tracks ?? []);
   });
 
-  createEffect(() => {
-    notes.onNotesChange(selectedTrack()?.notes ?? []);
+  const updateNotes = (trackIndex: number, getNotes: (notes: Note[]) => Note[]) => {
+    setTracks((allTracks) => {
+      const track = allTracks[trackIndex];
+      if (!track) return allTracks;
 
+      const notes = track.notes;
+      return [
+        ...allTracks.slice(0, trackIndex),
+        { ...track, notes: getNotes(notes) },
+        ...allTracks.slice(trackIndex + 1),
+      ];
+    });
+  };
+
+  const onNoteChange = (trackIndex: number, noteIndex: number, note: Note) => {
+    updateNotes(trackIndex, (notes) => [
+      ...notes.slice(0, noteIndex),
+      note,
+      ...notes.splice(noteIndex + 1),
+    ]);
+  };
+
+  const onInsertNote = (trackIndex: number, note: Note) => {
+    const track = tracks()[trackIndex];
+    if (!track) return -1;
+
+    const notes = track.notes;
+
+    const index = Math.max(
+      notes.findIndex(({ ticks }) => ticks > note.ticks),
+      0,
+    );
+
+    updateNotes(trackIndex, (notes) => {
+      return [...notes.slice(0, index), note, ...notes.splice(index)];
+    });
+
+    return index;
+  };
+
+  const onRemoveNote = (trackIndex: number, index: number) => {
+    updateNotes(trackIndex, (notes) => [...notes.slice(0, index), ...notes.splice(index + 1)]);
+  };
+
+  createEffect(() => {
     const longestTrackLength = Math.max(
-      ...(parsedMidi()?.tracks.map(
+      ...(tracks().map(
         (track) =>
           (track.notes[track.notes.length - 1]?.ticks ?? 0) +
           (track.notes[track.notes.length - 1]?.durationTicks ?? 0),
       ) ?? [0]),
     );
 
-    pianoRoll.onDurationChange(longestTrackLength);
+    pianoRoll.onDurationChange(longestTrackLength || pianoRoll.ppq() * 4);
   });
   const transport = Tone.getTransport();
 
   transport.stop();
-
-  createEffect(() => {
-    transport.PPQ = parsedMidi()?.header.ppq ?? transport.PPQ;
-    transport.bpm.value = parsedMidi()?.header.tempos[0]?.bpm ?? transport.bpm.value;
-  });
 
   let animationFrame: number | undefined;
 
@@ -160,16 +195,31 @@ const Demo: Component = () => {
           <Match when={demo() === "singleTrack"}>
             <SingleTrackDemo
               pianoRoll={pianoRoll}
-              notes={notes}
+              notes={selectedTrack()?.notes ?? []}
               playHeadPosition={playHeadPosition()}
+              onInsertNote={(note) => {
+                const trackIndex = selectedTrackIndex();
+                return onInsertNote(trackIndex, note);
+              }}
+              onNoteChange={(index, note) => {
+                const trackIndex = selectedTrackIndex();
+                return onNoteChange(trackIndex, index, note);
+              }}
+              onRemoveNote={(index) => {
+                const trackIndex = selectedTrackIndex();
+                return onRemoveNote(trackIndex, index);
+              }}
             />
           </Match>
           <Match when={demo() === "multiTrack"}>
             <MultiTrackDemo
               pianoRoll={pianoRoll}
-              tracks={parsedMidi()?.tracks ?? []}
-              selectedTrack={selectedTrack()}
-              onSelectedTrackChange={setSelectedTrack}
+              tracks={tracks() ?? []}
+              selectedTrackIndex={selectedTrackIndex()}
+              onSelectedTrackIndexChange={setSelectedTrackIndex}
+              onInsertNote={onInsertNote}
+              onNoteChange={onNoteChange}
+              onRemoveNote={onRemoveNote}
             />
           </Match>
         </Switch>

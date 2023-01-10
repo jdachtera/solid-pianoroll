@@ -1,4 +1,4 @@
-import { TrackJSON } from "@tonejs/midi";
+import { Note, Track } from "src/types";
 import { MultiTrackPianoRoll, usePianoRoll } from "../src";
 
 const audioCtx = new (window.AudioContext ||
@@ -10,10 +10,13 @@ gainNode.connect(analyser);
 analyser.connect(audioCtx.destination);
 
 const MultiTrackDemo = (props: {
-  tracks: TrackJSON[];
-  selectedTrack?: TrackJSON;
-  onSelectedTrackChange: (track: TrackJSON | undefined) => void;
+  tracks: Track[];
   pianoRoll: ReturnType<typeof usePianoRoll>;
+  selectedTrackIndex: number;
+  onSelectedTrackIndexChange: (trackIndex: number) => void;
+  onNoteChange?: (trackIndex: number, index: number, note: Note) => void;
+  onInsertNote?: (trackIndex: number, note: Note) => number;
+  onRemoveNote?: (trackIndex: number, index: number) => void;
 }) => {
   return (
     <>
@@ -34,8 +37,11 @@ const MultiTrackDemo = (props: {
         onVerticalZoomChange={props.pianoRoll.onVerticalZoomChange}
         onVerticalPositionChange={props.pianoRoll.onVerticalPositionChange}
         tracks={props.tracks ?? []}
-        selectedTrack={props.selectedTrack}
-        onSelectedTrackChange={props.onSelectedTrackChange}
+        selectedTrackIndex={props.selectedTrackIndex}
+        onSelectedTrackIndexChange={props.onSelectedTrackIndexChange}
+        onInsertNote={props.onInsertNote}
+        onNoteChange={props.onNoteChange}
+        onRemoveNote={props.onRemoveNote}
       />
     </>
   );
