@@ -1,4 +1,4 @@
-import { createMemo, Index, Show } from "solid-js";
+import { createMemo, For, Index, Show } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
 import { blackKeys, keys } from "./PianoRollKeys";
 import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
@@ -76,7 +76,7 @@ const PianoRollGrid = () => {
           );
         }}
       </Index>
-      <Show when={!context.condensed}>
+      <Show when={context.mode === "keys"}>
         <Index each={keys}>
           {(key) => {
             const virtualDimensions = createMemo(() =>
@@ -86,7 +86,7 @@ const PianoRollGrid = () => {
             return (
               <Show when={virtualDimensions().size > 0}>
                 <div
-                  class={styles["PianoRollGrid-Key"]}
+                  class={styles["PianoRollGrid-Row"]}
                   style={{
                     top: `${virtualDimensions().offset}px`,
                     height: `${virtualDimensions().size}px`,
@@ -103,6 +103,31 @@ const PianoRollGrid = () => {
             );
           }}
         </Index>
+      </Show>
+
+      <Show when={context.mode === "tracks"}>
+        <For each={context.tracks}>
+          {(track, index) => {
+            const virtualDimensions = createMemo(() =>
+              verticalViewPort().calculatePixelDimensions(index(), 1),
+            );
+
+            return (
+              <Show when={virtualDimensions().size > 0}>
+                <div
+                  class={styles["PianoRollGrid-Row"]}
+                  style={{
+                    top: `${virtualDimensions().offset}px`,
+                    height: `${virtualDimensions().size}px`,
+                    width: "100%",
+                    "background-color": index() % 2 === 0 ? "rgba(0,0,0,0.2)" : "none",
+                    "border-width": 0,
+                  }}
+                ></div>
+              </Show>
+            );
+          }}
+        </For>
       </Show>
     </div>
   );

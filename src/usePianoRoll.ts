@@ -4,7 +4,7 @@ import { GridDivision } from "./PianoRoll";
 const usePianoRoll = () => {
   const [ppq, onPpqChange] = createSignal(120);
 
-  const [condensed, onCondensedChange] = createSignal(false);
+  const [mode, onModeChange] = createSignal<"keys" | "tracks">("tracks");
 
   const [position, onPositionChange] = createSignal(0);
 
@@ -39,8 +39,8 @@ const usePianoRoll = () => {
     snapToGrid,
     onSnapToGridChange,
 
-    condensed,
-    onCondensedChange,
+    mode,
+    onModeChange,
 
     duration,
     onDurationChange,

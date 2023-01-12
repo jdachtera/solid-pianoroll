@@ -1,0 +1,16 @@
+.PianoRollTrackList {
+  position: relative;
+  height: 100%;
+  flex: 1;
+}
+
+.Track {
+  border-width: 0px;
+  position: absolute;
+  box-sizing: border-box;
+  width: 100%;
+  border-color: #000;
+  border-style: solid;
+  border-right-width: 1px;
+  border-bottom-width: 1px;
+}

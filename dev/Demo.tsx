@@ -1,28 +1,15 @@
 import { Midi } from "@tonejs/midi";
 import * as Tone from "tone";
-import {
-  Component,
-  createEffect,
-  createMemo,
-  createResource,
-  createSignal,
-  Match,
-  Switch,
-  untrack,
-} from "solid-js";
-import { usePianoRoll } from "../src";
+import { Component, createEffect, createResource, createSignal, untrack } from "solid-js";
+import { PianoRoll, PlayHead, usePianoRoll } from "../src";
 import { GridDivision } from "src/PianoRoll";
 
 import styles from "./Demo.module.css";
-import SingleTrackDemo from "./SingleTrackDemo";
 import { isNumber, PolySynth, TransportTime } from "tone";
 import { Note, Track } from "src/types";
-import MultiTrackDemo from "./MultiTrackDemo";
 
 const Demo: Component = () => {
-  const [demo, setDemo] = createSignal("singleTrack");
-
-  const [url, setUrl] = createSignal("./examples_bach_846.mid");
+  const [url, setUrl] = createSignal("./MIDI_sample.mid");
   const [inputUrl, setInputUrl] = createSignal(untrack(() => url()));
 
   const [playHeadPosition, setPlayHeadPosition] = createSignal(0);
@@ -36,7 +23,6 @@ const Demo: Component = () => {
 
   const [tracks, setTracks] = createSignal<Track[]>([]);
   const [selectedTrackIndex, setSelectedTrackIndex] = createSignal<number>(0);
-  const selectedTrack = createMemo(() => tracks()[selectedTrackIndex()]);
 
   const pianoRoll = usePianoRoll();
 
@@ -51,25 +37,24 @@ const Demo: Component = () => {
     setTracks(midi.tracks ?? []);
   });
 
-  const updateNotes = (trackIndex: number, getNotes: (notes: Note[]) => Note[]) => {
-    setTracks((allTracks) => {
-      const track = allTracks[trackIndex];
-      if (!track) return allTracks;
+  const updateNotes = async (trackIndex: number, getNotes: (notes: Note[]) => Note[]) => {
+    const track = tracks()[trackIndex];
+    if (!track) return;
 
-      const notes = track.notes;
-      return [
-        ...allTracks.slice(0, trackIndex),
-        { ...track, notes: getNotes(notes) },
-        ...allTracks.slice(trackIndex + 1),
-      ];
-    });
+    const notes = track.notes;
+
+    setTracks([
+      ...tracks().slice(0, trackIndex),
+      { ...track, notes: getNotes(notes) },
+      ...tracks().slice(trackIndex + 1),
+    ]);
   };
 
   const onNoteChange = (trackIndex: number, noteIndex: number, note: Note) => {
     updateNotes(trackIndex, (notes) => [
       ...notes.slice(0, noteIndex),
       note,
-      ...notes.splice(noteIndex + 1),
+      ...notes.slice(noteIndex + 1),
     ]);
   };
 
@@ -79,20 +64,25 @@ const Demo: Component = () => {
 
     const notes = track.notes;
 
-    const index = Math.max(
+    const newNoteIndex = Math.max(
       notes.findIndex(({ ticks }) => ticks > note.ticks),
       0,
     );
 
-    updateNotes(trackIndex, (notes) => {
-      return [...notes.slice(0, index), note, ...notes.splice(index)];
-    });
+    updateNotes(trackIndex, (notes) => [
+      ...notes.slice(0, newNoteIndex),
+      note,
+      ...notes.slice(newNoteIndex),
+    ]);
 
-    return index;
+    return newNoteIndex;
   };
 
-  const onRemoveNote = (trackIndex: number, index: number) => {
-    updateNotes(trackIndex, (notes) => [...notes.slice(0, index), ...notes.splice(index + 1)]);
+  const onRemoveNote = (trackIndex: number, noteIndex: number) => {
+    updateNotes(trackIndex, (notes) => [
+      ...notes.slice(0, noteIndex),
+      ...notes.slice(noteIndex + 1),
+    ]);
   };
 
   createEffect(() => {
@@ -176,9 +166,15 @@ const Demo: Component = () => {
     <div class={styles.Demo}>
       <h1>Solid Pianoroll</h1>
 
+      <p>
+        <a href="https://github.com/jdachtera/solid-pianoroll">
+          https://github.com/jdachtera/solid-pianoroll
+        </a>
+      </p>
+
       <nav>
-        <button onClick={() => setDemo("singleTrack")}>Single Track</button>
-        <button onClick={() => setDemo("multiTrack")}>Multi Track</button>
+        <button onClick={() => pianoRoll.onModeChange("keys")}>Keys</button>
+        <button onClick={() => pianoRoll.onModeChange("tracks")}>Tracks</button>
       </nav>
 
       <div
@@ -191,38 +187,33 @@ const Demo: Component = () => {
           background: "#ddd",
         }}
       >
-        <Switch>
-          <Match when={demo() === "singleTrack"}>
-            <SingleTrackDemo
-              pianoRoll={pianoRoll}
-              notes={selectedTrack()?.notes ?? []}
-              playHeadPosition={playHeadPosition()}
-              onInsertNote={(note) => {
-                const trackIndex = selectedTrackIndex();
-                return onInsertNote(trackIndex, note);
-              }}
-              onNoteChange={(index, note) => {
-                const trackIndex = selectedTrackIndex();
-                return onNoteChange(trackIndex, index, note);
-              }}
-              onRemoveNote={(index) => {
-                const trackIndex = selectedTrackIndex();
-                return onRemoveNote(trackIndex, index);
-              }}
-            />
-          </Match>
-          <Match when={demo() === "multiTrack"}>
-            <MultiTrackDemo
-              pianoRoll={pianoRoll}
-              tracks={tracks() ?? []}
-              selectedTrackIndex={selectedTrackIndex()}
-              onSelectedTrackIndexChange={setSelectedTrackIndex}
-              onInsertNote={onInsertNote}
-              onNoteChange={onNoteChange}
-              onRemoveNote={onRemoveNote}
-            />
-          </Match>
-        </Switch>
+        {selectedTrackIndex()}
+        <PianoRoll
+          style={{ flex: 1, "border-top": "1px gray solid" }}
+          gridDivision={pianoRoll.gridDivision()}
+          snapToGrid={pianoRoll.snapToGrid()}
+          ppq={pianoRoll.ppq()}
+          duration={pianoRoll.duration()}
+          position={pianoRoll.position()}
+          verticalPosition={pianoRoll.verticalPosition()}
+          verticalZoom={pianoRoll.verticalZoom()}
+          zoom={pianoRoll.zoom()}
+          onPositionChange={pianoRoll.onPositionChange}
+          onZoomChange={pianoRoll.onZoomChange}
+          onVerticalZoomChange={pianoRoll.onVerticalZoomChange}
+          onVerticalPositionChange={pianoRoll.onVerticalPositionChange}
+          tracks={tracks()}
+          selectedTrackIndex={selectedTrackIndex()}
+          onSelectedTrackIndexChange={setSelectedTrackIndex}
+          onNoteChange={onNoteChange}
+          onInsertNote={onInsertNote}
+          onRemoveNote={onRemoveNote}
+          mode={pianoRoll.mode()}
+          showAllTracks={false}
+          showTrackList
+        >
+          <PlayHead playHeadPosition={playHeadPosition()} style={{ "z-index": 3 }} />
+        </PianoRoll>
       </div>
 
       <div>

@@ -4,7 +4,7 @@
   height: 100%;
 }
 
-.PianoRollGrid-Key {
+.PianoRollGrid-Row {
   position: absolute;
   border-style: solid;
   border-color: gray;

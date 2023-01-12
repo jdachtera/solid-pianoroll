@@ -16,10 +16,10 @@ export const usePianoRollContext = () => {
 
 export const splitContextProps = (allProps: PianoRollProps & JSX.IntrinsicElements["div"]) =>
   splitProps(allProps, [
-    "condensed",
+    "mode",
     "duration",
     "gridDivision",
-    "notes",
+    "tracks",
     "position",
     "ppq",
     "snapToGrid",
@@ -33,4 +33,7 @@ export const splitContextProps = (allProps: PianoRollProps & JSX.IntrinsicElemen
     "onVerticalPositionChange",
     "onVerticalZoomChange",
     "onZoomChange",
+    "showAllTracks",
+    "selectedTrackIndex",
+    "onSelectedTrackIndexChange",
   ]);
