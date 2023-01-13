@@ -1,7 +1,7 @@
 import { createContext, splitProps, useContext } from "solid-js";
 
 import { PianoRollProps } from "./PianoRoll";
-import createPianoRollstate from "./usePianoRollState";
+import createPianoRollstate, { pianoRollStatePropNames } from "./usePianoRollState";
 
 const PianoRollContext = createContext<
   {
@@ -21,38 +21,4 @@ export const usePianoRollContext = () => {
 };
 
 export const splitContextProps = (allProps: PianoRollProps) =>
-  splitProps(allProps, [
-    "ppq",
-    "mode",
-    "position",
-    "zoom",
-    "verticalZoom",
-    "verticalPosition",
-    "verticalTrackZoom",
-    "verticalTrackPosition",
-    "gridDivision",
-    "snapToGrid",
-    "duration",
-    "tracks",
-    "selectedTrackIndex",
-    "pressedKeys",
-    "onPpqChange",
-    "onModeChange",
-    "onPositionChange",
-    "onZoomChange",
-    "onVerticalZoomChange",
-    "onVerticalPositionChange",
-    "onVerticalTrackZoomChange",
-    "onVerticalTrackPositionChange",
-    "onGridDivisionChange",
-    "onSnapToGridChange",
-    "onDurationChange",
-    "onTracksChange",
-    "onNoteChange",
-    "onInsertNote",
-    "onRemoveNote",
-    "onSelectedTrackIndexChange",
-    "onPressedKeysChange",
-    "showAllTracks",
-    "showTrackList",
-  ]);
+  splitProps(allProps, [...pianoRollStatePropNames, "showAllTracks", "showTrackList"]);

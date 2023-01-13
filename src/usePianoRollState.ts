@@ -20,24 +20,51 @@ type PianoRollState = {
   pressedKeys: number[];
 };
 
-const createPianoRollstate = (defaultState?: Partial<PianoRollState>) => {
+const defaultState: PianoRollState = {
+  ppq: 0,
+  mode: "keys",
+  position: 0,
+  zoom: 10,
+  verticalZoom: 5,
+  verticalPosition: 44,
+  verticalTrackZoom: 0.5,
+  verticalTrackPosition: 0,
+  gridDivision: 4,
+  snapToGrid: true,
+  duration: 0,
+  tracks: [],
+  selectedTrackIndex: 0,
+  pressedKeys: [],
+};
+
+const propNameToHandlerName = (name: string) => `on${name[0]?.toUpperCase()}${name.slice(1)}Change`;
+
+export const pianoRollStatePropNames = [
+  ...Object.keys(defaultState),
+  ...Object.keys(defaultState).map(propNameToHandlerName),
+  "onNoteChange",
+  "onInsertNote",
+  "onRemoveNote",
+  "onNoteDown",
+  "onNoteUp",
+] as (keyof ReturnType<typeof createPianoRollstate>)[];
+
+const createPianoRollstate = (initialState?: Partial<PianoRollState>) => {
   const [state, setState] = createStore<PianoRollState>({
-    ppq: 0,
-    mode: "keys",
-    position: 0,
-    zoom: 10,
-    verticalZoom: 5,
-    verticalPosition: 44,
-    verticalTrackZoom: 0.5,
-    verticalTrackPosition: 0,
-    gridDivision: 4,
-    snapToGrid: true,
-    duration: 0,
-    tracks: [],
-    selectedTrackIndex: 0,
-    pressedKeys: [],
     ...defaultState,
+    ...initialState,
   });
+
+  const handlers = Object.fromEntries(
+    (Object.entries(state) as Entries<typeof state>).map((entry) => {
+      return [
+        propNameToHandlerName(entry[0]),
+        (value: typeof entry[1]) => setState(entry[0], value),
+      ];
+    }),
+  ) as {
+    [key in keyof typeof state as `on${Capitalize<key>}Change`]: (value: typeof state[key]) => void;
+  };
 
   const updateNotes = async (trackIndex: number, getNotes: (notes: Note[]) => Note[]) => {
     const track = state.tracks[trackIndex];
@@ -45,7 +72,7 @@ const createPianoRollstate = (defaultState?: Partial<PianoRollState>) => {
 
     const notes = track.notes;
 
-    onTracksChange([
+    handlers.onTracksChange([
       ...state.tracks.slice(0, trackIndex),
       { ...track, notes: getNotes(notes) },
       ...state.tracks.slice(trackIndex + 1),
@@ -87,52 +114,26 @@ const createPianoRollstate = (defaultState?: Partial<PianoRollState>) => {
     ]);
   };
 
-  const onPpqChange = (ppq: PianoRollState["ppq"]) => setState("ppq", ppq);
-  const onModeChange = (mode: PianoRollState["mode"]) => setState("mode", mode);
-  const onPositionChange = (position: PianoRollState["position"]) => setState("position", position);
-  const onZoomChange = (zoom: PianoRollState["zoom"]) => setState("zoom", zoom);
-  const onVerticalZoomChange = (verticalZoom: PianoRollState["verticalZoom"]) =>
-    setState("verticalZoom", verticalZoom);
-  const onVerticalPositionChange = (verticalPosition: PianoRollState["verticalPosition"]) =>
-    setState("verticalPosition", verticalPosition);
+  const onNoteDown = (keyNumber: number) => {
+    handlers.onPressedKeysChange?.([...state.pressedKeys, keyNumber]);
+  };
 
-  const onVerticalTrackZoomChange = (verticalTrackZoom: PianoRollState["verticalTrackZoom"]) =>
-    setState("verticalTrackZoom", verticalTrackZoom);
-  const onVerticalTrackPositionChange = (
-    verticalTrackPosition: PianoRollState["verticalTrackPosition"],
-  ) => setState("verticalTrackPosition", verticalTrackPosition);
-
-  const onGridDivisionChange = (gridDivision: PianoRollState["gridDivision"]) =>
-    setState("gridDivision", gridDivision);
-  const onSnapToGridChange = (snapToGrid: PianoRollState["snapToGrid"]) =>
-    setState("snapToGrid", snapToGrid);
-  const onDurationChange = (duration: PianoRollState["duration"]) => setState("duration", duration);
-  const onTracksChange = (tracks: PianoRollState["tracks"]) => setState("tracks", tracks);
-  const onSelectedTrackIndexChange = (selectedTrackIndex: PianoRollState["selectedTrackIndex"]) =>
-    setState("selectedTrackIndex", selectedTrackIndex);
-
-  const onPressedKeysChange = (pressedKeys: PianoRollState["pressedKeys"]) =>
-    setState("pressedKeys", pressedKeys);
+  const onNoteUp = (keyNumber: number) => {
+    handlers.onPressedKeysChange?.([...state.pressedKeys].filter((number) => number !== keyNumber));
+  };
 
   return mergeProps(state, {
-    onPpqChange,
-    onModeChange,
-    onPositionChange,
-    onZoomChange,
-    onVerticalZoomChange,
-    onVerticalPositionChange,
-    onVerticalTrackZoomChange,
-    onVerticalTrackPositionChange,
-    onGridDivisionChange,
-    onSnapToGridChange,
-    onDurationChange,
-    onTracksChange,
+    ...handlers,
     onNoteChange,
     onInsertNote,
     onRemoveNote,
-    onSelectedTrackIndexChange,
-    onPressedKeysChange,
+    onNoteDown,
+    onNoteUp,
   });
 };
+
+type Entries<T> = {
+  [K in keyof T]: [K, T[K]];
+}[keyof T][];
 
 export default createPianoRollstate;

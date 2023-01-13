@@ -27,17 +27,6 @@ const PianoRollKeys = () => {
         <Index each={keys}>
           {(key) => {
             const isDown = createMemo(() => context.pressedKeys.includes(key().number));
-
-            const handleKeyDown = () => {
-              context.onPressedKeysChange?.([...context.pressedKeys, key().number]);
-            };
-
-            const handleKeyUp = () => {
-              context.onPressedKeysChange?.(
-                [...context.pressedKeys].filter((number) => number !== key().number),
-              );
-            };
-
             const virtualDimensions = createMemo(() =>
               verticalViewPort().calculatePixelDimensions(127 - key().number, 1),
             );
@@ -56,19 +45,19 @@ const PianoRollKeys = () => {
                   }}
                   onMouseDown={() => {
                     setIsMouseDown(true);
-                    handleKeyDown();
+                    context.onNoteDown(key().number);
                   }}
                   onMouseUp={() => {
-                    handleKeyUp();
+                    context.onNoteUp(key().number);
                   }}
                   onMouseEnter={() => {
                     if (isMouseDown()) {
-                      handleKeyDown();
+                      context.onNoteDown(key().number);
                     }
                   }}
                   onMouseLeave={() => {
                     if (isMouseDown()) {
-                      handleKeyUp();
+                      context.onNoteUp(key().number);
                     }
                   }}
                   title={key().name}
