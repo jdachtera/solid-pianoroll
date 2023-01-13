@@ -28,7 +28,7 @@ const createPianoRollstate = (defaultState?: Partial<PianoRollState>) => {
     zoom: 10,
     verticalZoom: 5,
     verticalPosition: 44,
-    verticalTrackZoom: 1,
+    verticalTrackZoom: 0.5,
     verticalTrackPosition: 0,
     gridDivision: 4,
     snapToGrid: true,
