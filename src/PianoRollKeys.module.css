@@ -2,30 +2,44 @@
   position: relative;
   height: 100%;
   width: 50px;
-}
-
-.Key {
-  border-width: 0px;
-  position: absolute;
-  box-sizing: border-box;
-  width: 100%;
+  border-width: 0;
   border-color: #000;
   border-style: solid;
   border-right-width: 1px;
+  border-left-width: 1px;
+  background: white;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.Key {
+  transition-property: background-color, box-shadow;
+  transition-duration: 400ms;
+  transition-timing-function: ease-out;
+  border-width: 0px;
+  position: absolute;
+  box-sizing: border-box;
+  width: 120%;
+  left: -20%;
+  border-color: #000;
+  border-style: solid;
 }
 
 .black {
   background: black;
+  border-top-right-radius: 12%;
+  border-bottom-right-radius: 12%;
+  margin-left: -20%;
+  z-index: 1;
 }
 
 .white {
   background: white;
+  border-top-width: 0.5px;
+  border-bottom-width: 0.5px;
 }
 
-.whiteAndNextIsWhite {
-  border-top-width: 0.1px;
-}
-
-.whiteAndPreviousIsWhite {
-  border-bottom-width: 0.1px;
+.down {
+  transition: none;
+  background: red;
 }

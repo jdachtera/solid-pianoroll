@@ -1,5 +1,5 @@
 import styles from "./PianoRollKeys.module.css";
-import { createMemo, Index, Show } from "solid-js";
+import { createMemo, createSignal, Index, Show } from "solid-js";
 import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
 
 const PianoRollKeys = () => {
@@ -9,9 +9,14 @@ const PianoRollKeys = () => {
     <div class={styles.PianoRollKeys}>
       <Index each={keys}>
         {(key) => {
+          const [isDown, setIsDown] = createSignal(false);
+
           const virtualDimensions = createMemo(() =>
             viewPort().calculatePixelDimensions(127 - key().number, 1),
           );
+
+          const previousIsBlack = blackKeys.includes((key().number - 1) % 12);
+          const nextIsBlack = blackKeys.includes((key().number + 1) % 12);
 
           return (
             <Show when={virtualDimensions().size > 0}>
@@ -20,18 +25,47 @@ const PianoRollKeys = () => {
                   [styles["Key"]]: true,
                   [styles["black"]]: key().isBlack,
                   [styles["white"]]: !key().isBlack,
-                  [styles["whiteAndNextIsWhite"]]:
-                    !key().isBlack && !blackKeys.includes((key().number + 1) % 12),
-                  [styles["whiteAndPreviousIsWhite"]]:
-                    !key().isBlack && !blackKeys.includes((key().number - 1) % 12),
+                  [styles["down"]]: isDown(),
                 }}
+                onMouseDown={() => setIsDown(true)}
+                onMouseUp={() => setIsDown(false)}
                 title={key().name}
                 data-index={key().number % 12}
                 style={{
-                  top: `${virtualDimensions().offset}px`,
-                  height: `${virtualDimensions().size}px`,
+                  top: `${
+                    virtualDimensions().offset -
+                    (!key().isBlack && nextIsBlack ? virtualDimensions().size / 2 : 0)
+                  }px`,
+                  height: `${
+                    virtualDimensions().size +
+                    (!key().isBlack && nextIsBlack ? virtualDimensions().size / 2 : 0) +
+                    (!key().isBlack && previousIsBlack ? virtualDimensions().size / 2 : 0)
+                  }px`,
+                  "box-shadow": [
+                    `0px 0px ${Math.min(virtualDimensions().size / 20, 1)}px ${Math.min(
+                      virtualDimensions().size / 50,
+                      1,
+                    )}px rgba(0, 0, 0, 0.5) ${key().isBlack ? "" : "inset"}`,
+                    isDown() &&
+                      `0px 0px ${Math.min(virtualDimensions().size / 8, 2)}px ${Math.min(
+                        virtualDimensions().size / 20,
+                        2,
+                      )}px rgba(0, 0, 0, 0.5) inset`,
+                  ]
+                    .filter((item) => !!item)
+                    .join(", "),
                 }}
-              ></div>
+              >
+                <Show when={key().isBlack && false}>
+                  <div
+                    class={styles["black-separator"]}
+                    style={{
+                      top: `${virtualDimensions().offset}px`,
+                      height: `${virtualDimensions().size / 2 - 0.25}px`,
+                    }}
+                  ></div>
+                </Show>
+              </div>
             </Show>
           );
         }}
