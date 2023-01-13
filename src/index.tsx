@@ -1,6 +1,6 @@
 import PianoRoll from "./PianoRoll";
 import PlayHead from "./PlayHead";
 import useNotes from "./useNotes";
-import usePianoRoll from "./usePianoRoll";
+import createPianoRollstate from "./usePianoRoll";
 
-export { PianoRoll, usePianoRoll, useNotes, PlayHead };
+export { PianoRoll, createPianoRollstate, useNotes, PlayHead };

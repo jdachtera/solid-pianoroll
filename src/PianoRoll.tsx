@@ -1,6 +1,14 @@
 import styles from "./PianoRoll.module.css";
 
-import { JSX, createSignal, createMemo, ParentProps, createEffect, Show } from "solid-js";
+import {
+  JSX,
+  createSignal,
+  createMemo,
+  ParentProps,
+  createEffect,
+  Show,
+  mergeProps,
+} from "solid-js";
 
 import { PianoRollContextProvider, splitContextProps } from "./PianoRollContext";
 import PianoRollKeys from "./PianoRollKeys";
@@ -49,8 +57,12 @@ export type PianoRollProps = {
   onSelectedTrackIndexChange?: (trackIndex: number) => void;
 };
 
-const PianoRoll = (allProps: ParentProps<PianoRollProps & JSX.IntrinsicElements["div"]>) => {
-  const [contextProps, divProps] = splitContextProps(allProps);
+const PianoRoll = (
+  allProps: ParentProps<PianoRollProps & Omit<JSX.IntrinsicElements["div"], "onDurationChange">>,
+) => {
+  const propsWithDefaults = mergeProps({ showAllTracks: false }, allProps);
+
+  const [contextProps, divProps] = splitContextProps(propsWithDefaults);
 
   const [scrollerRef, setScrollerRef] = createSignal<HTMLDivElement>();
   const clientRect = useBoundingClientRect(scrollerRef);

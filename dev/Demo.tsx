@@ -1,12 +1,11 @@
 import { Midi } from "@tonejs/midi";
 import * as Tone from "tone";
 import { Component, createEffect, createResource, createSignal, untrack } from "solid-js";
-import { PianoRoll, PlayHead, usePianoRoll } from "../src";
+import { PianoRoll, PlayHead, createPianoRollstate } from "../src";
 import { GridDivision } from "src/PianoRoll";
 
 import styles from "./Demo.module.css";
 import { isNumber, PolySynth, TransportTime } from "tone";
-import { Note, Track } from "src/types";
 
 const Demo: Component = () => {
   const [url, setUrl] = createSignal("./MIDI_sample.mid");
@@ -21,10 +20,7 @@ const Demo: Component = () => {
     return midi.toJSON();
   });
 
-  const [tracks, setTracks] = createSignal<Track[]>([]);
-  const [selectedTrackIndex, setSelectedTrackIndex] = createSignal<number>(0);
-
-  const pianoRoll = usePianoRoll();
+  const pianoRollState = createPianoRollstate();
 
   createEffect(() => {
     const midi = parsedMidi();
@@ -32,69 +28,20 @@ const Demo: Component = () => {
 
     transport.PPQ = midi.header.ppq ?? transport.PPQ;
     transport.bpm.value = midi.header.tempos[0]?.bpm ?? transport.bpm.value;
-    pianoRoll.onPpqChange(midi.header.ppq);
-
-    setTracks(midi.tracks ?? []);
+    pianoRollState.onPpqChange(midi.header.ppq);
+    pianoRollState.onTracksChange(midi.tracks ?? []);
   });
-
-  const updateNotes = async (trackIndex: number, getNotes: (notes: Note[]) => Note[]) => {
-    const track = tracks()[trackIndex];
-    if (!track) return;
-
-    const notes = track.notes;
-
-    setTracks([
-      ...tracks().slice(0, trackIndex),
-      { ...track, notes: getNotes(notes) },
-      ...tracks().slice(trackIndex + 1),
-    ]);
-  };
-
-  const onNoteChange = (trackIndex: number, noteIndex: number, note: Note) => {
-    updateNotes(trackIndex, (notes) => [
-      ...notes.slice(0, noteIndex),
-      note,
-      ...notes.slice(noteIndex + 1),
-    ]);
-  };
-
-  const onInsertNote = (trackIndex: number, note: Note) => {
-    const track = tracks()[trackIndex];
-    if (!track) return -1;
-
-    const notes = track.notes;
-
-    const newNoteIndex = Math.max(
-      notes.findIndex(({ ticks }) => ticks > note.ticks),
-      0,
-    );
-
-    updateNotes(trackIndex, (notes) => [
-      ...notes.slice(0, newNoteIndex),
-      note,
-      ...notes.slice(newNoteIndex),
-    ]);
-
-    return newNoteIndex;
-  };
-
-  const onRemoveNote = (trackIndex: number, noteIndex: number) => {
-    updateNotes(trackIndex, (notes) => [
-      ...notes.slice(0, noteIndex),
-      ...notes.slice(noteIndex + 1),
-    ]);
-  };
 
   createEffect(() => {
     const longestTrackLength = Math.max(
-      ...(tracks().map(
+      ...(pianoRollState.tracks.map(
         (track) =>
           (track.notes[track.notes.length - 1]?.ticks ?? 0) +
           (track.notes[track.notes.length - 1]?.durationTicks ?? 0),
       ) ?? [0]),
     );
 
-    pianoRoll.onDurationChange(longestTrackLength || pianoRoll.ppq() * 4);
+    pianoRollState.onDurationChange(longestTrackLength || pianoRollState.ppq * 4);
   });
   const transport = Tone.getTransport();
 
@@ -173,8 +120,8 @@ const Demo: Component = () => {
       </p>
 
       <nav>
-        <button onClick={() => pianoRoll.onModeChange("keys")}>Keys</button>
-        <button onClick={() => pianoRoll.onModeChange("tracks")}>Tracks</button>
+        <button onClick={() => pianoRollState.onModeChange("keys")}>Keys</button>
+        <button onClick={() => pianoRollState.onModeChange("tracks")}>Tracks</button>
       </nav>
 
       <div
@@ -187,31 +134,8 @@ const Demo: Component = () => {
           background: "#ddd",
         }}
       >
-        {selectedTrackIndex()}
-        <PianoRoll
-          style={{ flex: 1, "border-top": "1px gray solid" }}
-          gridDivision={pianoRoll.gridDivision()}
-          snapToGrid={pianoRoll.snapToGrid()}
-          ppq={pianoRoll.ppq()}
-          duration={pianoRoll.duration()}
-          position={pianoRoll.position()}
-          verticalPosition={pianoRoll.verticalPosition()}
-          verticalZoom={pianoRoll.verticalZoom()}
-          zoom={pianoRoll.zoom()}
-          onPositionChange={pianoRoll.onPositionChange}
-          onZoomChange={pianoRoll.onZoomChange}
-          onVerticalZoomChange={pianoRoll.onVerticalZoomChange}
-          onVerticalPositionChange={pianoRoll.onVerticalPositionChange}
-          tracks={tracks()}
-          selectedTrackIndex={selectedTrackIndex()}
-          onSelectedTrackIndexChange={setSelectedTrackIndex}
-          onNoteChange={onNoteChange}
-          onInsertNote={onInsertNote}
-          onRemoveNote={onRemoveNote}
-          mode={pianoRoll.mode()}
-          showAllTracks={false}
-          showTrackList
-        >
+        {pianoRollState.selectedTrackIndex}
+        <PianoRoll {...pianoRollState} showTrackList>
           <PlayHead playHeadPosition={playHeadPosition()} style={{ "z-index": 3 }} />
         </PianoRoll>
       </div>
@@ -229,12 +153,12 @@ const Demo: Component = () => {
           </button>
           <label>Grid:</label>
           <select
-            value={pianoRoll.gridDivision()}
+            value={pianoRollState.gridDivision}
             onChange={(event) => {
               const option = event.currentTarget.options[event.currentTarget.selectedIndex];
               if (!option) return;
 
-              pianoRoll.onGridDivisionChange(+option.value as GridDivision);
+              pianoRollState.onGridDivisionChange(+option.value as GridDivision);
             }}
           >
             <option value="1">1</option>
@@ -251,8 +175,8 @@ const Demo: Component = () => {
           <label>
             <input
               type="checkbox"
-              checked={pianoRoll.snapToGrid()}
-              onChange={() => pianoRoll.onSnapToGridChange(!pianoRoll.snapToGrid())}
+              checked={pianoRollState.snapToGrid}
+              onChange={() => pianoRollState.onSnapToGridChange(!pianoRollState.snapToGrid)}
             />
             Snap to grid
           </label>
