@@ -2,6 +2,7 @@ import styles from "./PianoRollKeys.module.css";
 import { createEffect, createMemo, createSignal, Index, Show } from "solid-js";
 import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
 import { usePianoRollContext } from "./PianoRollContext";
+import ScrollContainer from "./viewport/ScrollContainer";
 
 const PianoRollKeys = () => {
   const viewPort = createMemo(() => useViewPortDimension("vertical"));
@@ -20,7 +21,7 @@ const PianoRollKeys = () => {
   });
 
   return (
-    <div class={styles.PianoRollKeys}>
+    <ScrollContainer classList={{ [styles.PianoRollKeys]: true }} showScrollbar={false}>
       <Index each={keys}>
         {(key) => {
           const isDown = createMemo(() => context.pressedKeys.includes(key().number));
@@ -109,7 +110,7 @@ const PianoRollKeys = () => {
           );
         }}
       </Index>
-    </div>
+    </ScrollContainer>
   );
 };
 

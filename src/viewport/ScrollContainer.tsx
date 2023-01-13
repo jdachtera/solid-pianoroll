@@ -1,24 +1,36 @@
-import { createEffect, createMemo, mergeProps, ParentProps, Ref } from "solid-js";
+import { createEffect, createMemo, JSX, mergeProps, ParentProps, Ref, splitProps } from "solid-js";
 
 import { useViewPortDimension } from "./ScrollZoomViewPort";
 
+import styles from "./ScrollContainer.module.css";
+
 const ScrollContainer = (
-  props: ParentProps<{
-    ref?: Ref<HTMLDivElement>;
-    verticalDimensionName?: string;
-    horizontalDimensionName?: string;
-    showScrollbar?: boolean;
-  }>,
+  props: ParentProps<
+    {
+      ref?: Ref<HTMLDivElement>;
+      verticalDimensionName?: string;
+      horizontalDimensionName?: string;
+      showScrollbar?: boolean;
+    } & JSX.IntrinsicElements["div"]
+  >,
 ) => {
+  let scrollContentRef: HTMLDivElement | undefined;
+
+  const [ownProps, divProps] = splitProps(props, [
+    "ref",
+    "verticalDimensionName",
+    "horizontalDimensionName",
+    "showScrollbar",
+  ]);
+
   const propsWithDefaults = mergeProps(
     {
       verticalDimensionName: "vertical",
       horizontalDimensionName: "horizontal",
       showScrollbar: true,
     },
-    props,
+    ownProps,
   );
-  let scrollContentRef: HTMLDivElement | undefined;
 
   const verticalViewPort = createMemo(() =>
     useViewPortDimension(propsWithDefaults.verticalDimensionName),
@@ -49,7 +61,7 @@ const ScrollContainer = (
     horizontalViewPort().onPositionChange?.(maxPosition * scrollLeftAmount);
   };
 
-  const handleWheel = (event: WheelEvent) => {
+  const handleWheel = (event: WheelEvent & { currentTarget: Element }) => {
     if (event.altKey) {
       event.preventDefault();
 
@@ -72,6 +84,10 @@ const ScrollContainer = (
           Math.min(maxVerticalPosition, verticalViewPort()?.position),
         );
       }
+    } else if (!props.showScrollbar) {
+      event.preventDefault();
+      event.currentTarget.scrollLeft += event.deltaX;
+      event.currentTarget.scrollTop += event.deltaY;
     }
   };
 
@@ -110,16 +126,17 @@ const ScrollContainer = (
   return (
     <div
       ref={props.ref}
-      class="PianoRoll-Scroller"
       style={{
-        height: "100%",
-        width: "100%",
-        "z-index": 4,
         overflow: propsWithDefaults.showScrollbar ? "scroll" : "hidden",
-        "pointer-events": "auto",
+        ...(typeof divProps.style === "object" && divProps.style),
+      }}
+      classList={{
+        [styles.ScrollContainer]: true,
+        ...divProps.classList,
       }}
       onScroll={handleScroll}
       onWheel={handleWheel}
+      {...divProps}
     >
       <div ref={scrollContentRef}>
         <div

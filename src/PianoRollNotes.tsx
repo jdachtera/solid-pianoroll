@@ -2,6 +2,7 @@ import { batch, createMemo, createSignal, For, Ref, Show } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
 import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
 import styles from "./PianoRollNotes.module.scss";
+import { clamp } from "./viewport/createViewPortDimension";
 
 type NoteDragMode = "trimStart" | "move" | "trimEnd" | undefined;
 
@@ -32,7 +33,11 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
 
     const targetTrackIndex =
       context.mode === "tracks"
-        ? Math.floor(verticalViewPort().calculatePosition(event.clientY))
+        ? clamp(
+            Math.floor(verticalViewPort().calculatePosition(event.clientY)),
+            0,
+            context.tracks.length - 1,
+          )
         : context.selectedTrackIndex ?? 0;
 
     const eventPositionTicks = Math.floor(position / gridDivisionTicks()) * gridDivisionTicks();
@@ -221,8 +226,12 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
 
                             const targetTrackIndex =
                               context.mode === "tracks"
-                                ? Math.floor(
-                                    verticalViewPort().calculatePosition(mouseMoveEvent.clientY),
+                                ? clamp(
+                                    Math.floor(
+                                      verticalViewPort().calculatePosition(mouseMoveEvent.clientY),
+                                    ),
+                                    0,
+                                    context.tracks.length - 1,
                                   )
                                 : previousTrackIndex;
 

@@ -34,7 +34,7 @@ export type PianoRollProps = {
 const PianoRoll = (allProps: ParentProps<PianoRollProps>) => {
   const propsWithDefaults = mergeProps({ showAllTracks: false }, allProps);
 
-  const [contextProps, divProps] = splitContextProps(propsWithDefaults);
+  const [context, divProps] = splitContextProps(propsWithDefaults);
 
   const [scrollerRef, setScrollerRef] = createSignal<HTMLDivElement>();
   const [trackScrollerRef, setTrackScrollerRef] = createSignal<HTMLDivElement>();
@@ -56,37 +56,37 @@ const PianoRoll = (allProps: ParentProps<PianoRollProps>) => {
   createEffect((isInitial) => {
     if (isInitial) return false;
 
-    if (contextProps.mode === "tracks") {
-      contextProps.onVerticalPositionChange?.(0);
+    if (context.mode === "tracks") {
+      context.onVerticalPositionChange?.(0);
     }
   }, true);
 
   return (
-    <PianoRollContextProvider value={contextProps}>
+    <PianoRollContextProvider value={context}>
       <div {...divProps} class={styles.PianoRoll}>
         <ScrollZoomViewPort
           dimensions={{
             horizontal: () => ({
               pixelOffset: clientRect().left,
               pixelSize: clientRect().width,
-              position: contextProps.position,
-              range: contextProps.duration,
-              zoom: contextProps.zoom * (zoomFactor / clientRect().width),
-              onPositionChange: contextProps.onPositionChange,
+              position: context.position,
+              range: context.duration,
+              zoom: context.zoom * (zoomFactor / clientRect().width),
+              onPositionChange: context.onPositionChange,
               onZoomChange: (zoom) =>
-                contextProps.onZoomChange?.(
+                context.onZoomChange?.(
                   clamp(zoom / (zoomFactor / clientRect().width), minZoom(), maxZoom()),
                 ),
             }),
             vertical: () => ({
               pixelOffset: clientRect().top,
               pixelSize: clientRect().height,
-              position: contextProps.verticalPosition,
+              position: context.verticalPosition,
               range: 128,
-              zoom: contextProps.verticalZoom * (zoomFactor / clientRect().height),
-              onPositionChange: contextProps.onVerticalPositionChange,
+              zoom: context.verticalZoom * (zoomFactor / clientRect().height),
+              onPositionChange: context.onVerticalPositionChange,
               onZoomChange: (verticalZoom) =>
-                contextProps.onVerticalZoomChange?.(
+                context.onVerticalZoomChange?.(
                   clamp(
                     verticalZoom / (zoomFactor / clientRect().height),
                     minVerticalZoom(),
@@ -104,12 +104,12 @@ const PianoRoll = (allProps: ParentProps<PianoRollProps>) => {
             verticalTracks: () => ({
               pixelOffset: trackClientRef().top,
               pixelSize: trackClientRef().height,
-              position: contextProps.verticalTrackPosition,
-              range: Math.max(contextProps.tracks.length, 16),
-              zoom: contextProps.verticalTrackZoom * (zoomFactor / trackClientRef().height),
-              onPositionChange: contextProps.onVerticalTrackPositionChange,
+              position: context.verticalTrackPosition,
+              range: context.tracks.length,
+              zoom: context.verticalTrackZoom * (zoomFactor / trackClientRef().height),
+              onPositionChange: context.onVerticalTrackPositionChange,
               onZoomChange: (verticalTrackZoom) =>
-                contextProps.onVerticalTrackZoomChange?.(
+                context.onVerticalTrackZoomChange?.(
                   clamp(
                     verticalTrackZoom / (zoomFactor / trackClientRef().height),
                     minVerticalTracksZoom(),
@@ -126,24 +126,24 @@ const PianoRoll = (allProps: ParentProps<PianoRollProps>) => {
               dimensionName="verticalTracks"
             />
             <div style={{ display: "flex", width: "20%" }}>
-              <Show when={contextProps.showTrackList}>
+              <Show when={context.showTrackList}>
                 <ScrollContainer
                   ref={setTrackScrollerRef}
                   horizontalDimensionName="horizontalTracks"
                   verticalDimensionName="verticalTracks"
-                  showScrollbar={contextProps.mode === "keys"}
+                  showScrollbar={context.mode === "keys"}
                 >
                   <PianoRollTrackList />
                 </ScrollContainer>
               </Show>
-              <Show when={contextProps.mode === "keys"}>
+              <Show when={context.mode === "keys"}>
                 <PianoRollKeys />
               </Show>
             </div>
 
             <ScrollContainer
               ref={setScrollerRef}
-              verticalDimensionName={contextProps.mode === "keys" ? "vertical" : "verticalTracks"}
+              verticalDimensionName={context.mode === "keys" ? "vertical" : "verticalTracks"}
             >
               {allProps.children}
               <PianoRollGrid />
@@ -153,7 +153,7 @@ const PianoRoll = (allProps: ParentProps<PianoRollProps>) => {
             <VerticalZoomControl
               min={minVerticalZoom()}
               max={maxVerticalZoom()}
-              dimensionName={contextProps.mode === "keys" ? "vertical" : "verticalTracks"}
+              disabled={context.mode !== "keys"}
             />
           </div>
           <HorizontalZoomControl min={minZoom()} max={maxZoom()} />
