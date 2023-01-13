@@ -7,7 +7,9 @@ import styles from "./PianoRollGrid.module.css";
 const PianoRollGrid = () => {
   const context = usePianoRollContext();
 
-  const verticalViewPort = createMemo(() => useViewPortDimension("vertical"));
+  const verticalViewPort = createMemo(() =>
+    useViewPortDimension(context.mode === "keys" ? "vertical" : "verticalTracks"),
+  );
   const horizontalViewPort = createMemo(() => useViewPortDimension("horizontal"));
 
   const measureTicks = createMemo(() => context.ppq * 4);

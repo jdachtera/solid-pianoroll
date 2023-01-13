@@ -10,6 +10,8 @@ type PianoRollState = {
   zoom: number;
   verticalZoom: number;
   verticalPosition: number;
+  verticalTrackZoom: number;
+  verticalTrackPosition: number;
   gridDivision: GridDivision;
   snapToGrid: boolean;
   duration: number;
@@ -26,6 +28,8 @@ const createPianoRollstate = (defaultState?: Partial<PianoRollState>) => {
     zoom: 10,
     verticalZoom: 5,
     verticalPosition: 44,
+    verticalTrackZoom: 1,
+    verticalTrackPosition: 0,
     gridDivision: 4,
     snapToGrid: true,
     duration: 0,
@@ -91,6 +95,13 @@ const createPianoRollstate = (defaultState?: Partial<PianoRollState>) => {
     setState("verticalZoom", verticalZoom);
   const onVerticalPositionChange = (verticalPosition: PianoRollState["verticalPosition"]) =>
     setState("verticalPosition", verticalPosition);
+
+  const onVerticalTrackZoomChange = (verticalTrackZoom: PianoRollState["verticalTrackZoom"]) =>
+    setState("verticalTrackZoom", verticalTrackZoom);
+  const onVerticalTrackPositionChange = (
+    verticalTrackPosition: PianoRollState["verticalTrackPosition"],
+  ) => setState("verticalTrackPosition", verticalTrackPosition);
+
   const onGridDivisionChange = (gridDivision: PianoRollState["gridDivision"]) =>
     setState("gridDivision", gridDivision);
   const onSnapToGridChange = (snapToGrid: PianoRollState["snapToGrid"]) =>
@@ -110,6 +121,8 @@ const createPianoRollstate = (defaultState?: Partial<PianoRollState>) => {
     onZoomChange,
     onVerticalZoomChange,
     onVerticalPositionChange,
+    onVerticalTrackZoomChange,
+    onVerticalTrackPositionChange,
     onGridDivisionChange,
     onSnapToGridChange,
     onDurationChange,

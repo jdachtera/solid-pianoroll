@@ -4,19 +4,14 @@ import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
 import { usePianoRollContext } from "./PianoRollContext";
 
 const PianoRollTrackList = () => {
-  const viewPort = createMemo(() => useViewPortDimension("vertical"));
+  const viewPort = createMemo(() => useViewPortDimension("verticalTracks"));
   const context = usePianoRollContext();
 
   return (
     <div class={styles.PianoRollTrackList}>
       <Index each={context.tracks}>
         {(track, index) => {
-          const virtualDimensions = createMemo(() =>
-            viewPort().calculatePixelDimensions(
-              context.mode === "tracks" ? index : index * 8,
-              context.mode === "tracks" ? 1 : 8,
-            ),
-          );
+          const virtualDimensions = createMemo(() => viewPort().calculatePixelDimensions(index, 1));
 
           return (
             <Show when={virtualDimensions().size > 0}>

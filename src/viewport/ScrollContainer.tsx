@@ -1,12 +1,31 @@
-import { createEffect, createMemo, ParentProps, Ref } from "solid-js";
+import { createEffect, createMemo, mergeProps, ParentProps, Ref } from "solid-js";
 
 import { useViewPortDimension } from "./ScrollZoomViewPort";
 
-const ScrollContainer = (props: ParentProps<{ ref?: Ref<HTMLDivElement> }>) => {
+const ScrollContainer = (
+  props: ParentProps<{
+    ref?: Ref<HTMLDivElement>;
+    verticalDimensionName?: string;
+    horizontalDimensionName?: string;
+    showScrollbar?: boolean;
+  }>,
+) => {
+  const propsWithDefaults = mergeProps(
+    {
+      verticalDimensionName: "vertical",
+      horizontalDimensionName: "horizontal",
+      showScrollbar: true,
+    },
+    props,
+  );
   let scrollContentRef: HTMLDivElement | undefined;
 
-  const verticalViewPort = createMemo(() => useViewPortDimension("vertical"));
-  const horizontalViewPort = createMemo(() => useViewPortDimension("horizontal"));
+  const verticalViewPort = createMemo(() =>
+    useViewPortDimension(propsWithDefaults.verticalDimensionName),
+  );
+  const horizontalViewPort = createMemo(() =>
+    useViewPortDimension(propsWithDefaults.horizontalDimensionName),
+  );
 
   const handleScroll = (event: UIEvent & { currentTarget: Element }) => {
     event.preventDefault();
@@ -96,7 +115,7 @@ const ScrollContainer = (props: ParentProps<{ ref?: Ref<HTMLDivElement> }>) => {
         height: "100%",
         width: "100%",
         "z-index": 4,
-        overflow: "scroll",
+        overflow: propsWithDefaults.showScrollbar ? "scroll" : "hidden",
         "pointer-events": "auto",
       }}
       onScroll={handleScroll}

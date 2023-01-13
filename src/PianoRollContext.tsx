@@ -1,8 +1,14 @@
-import { createContext, JSX, splitProps, useContext } from "solid-js";
+import { createContext, splitProps, useContext } from "solid-js";
 
 import { PianoRollProps } from "./PianoRoll";
+import createPianoRollstate from "./usePianoRollState";
 
-const PianoRollContext = createContext<PianoRollProps>();
+const PianoRollContext = createContext<
+  {
+    showAllTracks?: boolean;
+    showTrackList?: boolean;
+  } & ReturnType<typeof createPianoRollstate>
+>();
 
 export const PianoRollContextProvider = PianoRollContext.Provider;
 
@@ -14,28 +20,39 @@ export const usePianoRollContext = () => {
   return context;
 };
 
-export const splitContextProps = (allProps: PianoRollProps & JSX.IntrinsicElements["div"]) =>
+export const splitContextProps = (allProps: PianoRollProps) =>
   splitProps(allProps, [
-    "mode",
-    "duration",
-    "gridDivision",
-    "tracks",
-    "position",
     "ppq",
-    "snapToGrid",
-    "verticalPosition",
-    "verticalZoom",
-    "pressedKeys",
+    "mode",
+    "position",
     "zoom",
-    "onInsertNote",
-    "onNoteChange",
-    "onPositionChange",
-    "onRemoveNote",
-    "onVerticalPositionChange",
-    "onVerticalZoomChange",
-    "onZoomChange",
-    "showAllTracks",
+    "verticalZoom",
+    "verticalPosition",
+    "verticalTrackZoom",
+    "verticalTrackPosition",
+    "gridDivision",
+    "snapToGrid",
+    "duration",
+    "tracks",
     "selectedTrackIndex",
+    "pressedKeys",
+    "onPpqChange",
+    "onModeChange",
+    "onPositionChange",
+    "onZoomChange",
+    "onVerticalZoomChange",
+    "onVerticalPositionChange",
+    "onVerticalTrackZoomChange",
+    "onVerticalTrackPositionChange",
+    "onGridDivisionChange",
+    "onSnapToGridChange",
+    "onDurationChange",
+    "onTracksChange",
+    "onNoteChange",
+    "onInsertNote",
+    "onRemoveNote",
     "onSelectedTrackIndexChange",
     "onPressedKeysChange",
+    "showAllTracks",
+    "showTrackList",
   ]);

@@ -2,7 +2,7 @@ import { createEffect } from "solid-js";
 import { createStore } from "solid-js/store";
 
 export type ViewPortDimension = ReturnType<typeof createViewPortDimension>;
-export type ViewPortDimensionName = "horizontal" | "vertical";
+export type ViewPortDimensionName = string;
 export type ViewPortDimensionState = {
   position: number;
   range: number;

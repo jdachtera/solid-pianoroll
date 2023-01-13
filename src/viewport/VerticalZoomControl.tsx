@@ -1,8 +1,13 @@
+import { createMemo } from "solid-js";
 import { JSX } from "solid-js/jsx-runtime";
-import { usePianoRollContext } from "../PianoRollContext";
+import { useViewPortDimension } from "./ScrollZoomViewPort";
 
-const VerticalZoomControl = (props: JSX.IntrinsicElements["input"]) => {
-  const context = usePianoRollContext();
+const VerticalZoomControl = (
+  props: {
+    dimensionName?: string;
+  } & JSX.IntrinsicElements["input"],
+) => {
+  const dimension = createMemo(() => useViewPortDimension(props.dimensionName ?? "vertical"));
 
   return (
     <input
@@ -10,12 +15,13 @@ const VerticalZoomControl = (props: JSX.IntrinsicElements["input"]) => {
       max="11"
       step={0.01}
       {...props}
-      value={context.verticalZoom}
-      onInput={(event) => context.onVerticalZoomChange?.(event.currentTarget.valueAsNumber)}
+      value={dimension().zoom}
+      onInput={(event) => dimension().onZoomChange?.(event.currentTarget.valueAsNumber)}
       type="range"
       {...{ orient: "vertical" }}
       style={{
         width: "16px",
+        transform: "rotate(180deg)",
         ...({
           "writing-mode": "bt-lr" /* IE */,
           "-webkit-appearance": "slider-vertical" /* WebKit */,
