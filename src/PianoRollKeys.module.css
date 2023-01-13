@@ -1,7 +1,6 @@
 .PianoRollKeys {
   position: relative;
   height: 100%;
-  width: 50px;
   border-width: 0;
   border-color: #000;
   border-style: solid;
@@ -9,7 +8,6 @@
   border-left-width: 1px;
   background: white;
   cursor: pointer;
-  overflow: hidden;
 }
 
 .Key {

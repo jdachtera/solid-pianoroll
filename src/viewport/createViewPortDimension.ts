@@ -16,22 +16,35 @@ export type ViewPortDimensionState = {
   onPositionChange?: (zoom: number) => void;
 
   zoom: number;
+
+  minZoom: number;
+  maxZoom: number;
 };
 
 export default function createViewPortDimension(getState: () => ViewPortDimensionState) {
-  const getStateWithFunctions = () => ({
-    ...getState(),
-    calculatePixelOffset,
-    calculatePixelValue,
-    calculatePosition,
-    calculatePixelDimensions,
-    calculateVisibleRange,
-    calculateMaxPosition,
-    isVisible,
-  });
+  const getStateWithFunctions = () => {
+    const state = getState();
+
+    const onZoomChange = (zoom: number) =>
+      state.onZoomChange?.(clamp(zoom, state.minZoom, state.maxZoom));
+
+    const onPositionChange = (position: number) => state.onPositionChange?.(position);
+
+    return {
+      ...state,
+      onZoomChange,
+      onPositionChange,
+      calculatePixelOffset,
+      calculatePixelValue,
+      calculatePosition,
+      calculatePixelDimensions,
+      calculateVisibleRange,
+      calculateMaxPosition,
+      isVisible,
+    };
+  };
 
   const [state, setState] = createStore(getStateWithFunctions());
-
   createEffect(() => setState(getStateWithFunctions()));
 
   function calculatePixelValue(position: number = state.position) {

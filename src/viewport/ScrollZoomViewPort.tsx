@@ -5,13 +5,30 @@ import createViewPortDimension, {
   ViewPortDimensionState,
 } from "./createViewPortDimension";
 
+const defaultViewPortProps = {
+  pixelOffset: 0,
+  position: 0,
+  range: 1,
+  zoom: 1,
+  minZoom: 1,
+  maxZoom: Infinity,
+};
+
 export const ScrollZoomViewPort = (
   props: ParentProps<{
-    dimensions: Record<ViewPortDimensionName, () => Omit<ViewPortDimensionState, "name">>;
+    dimensions: Record<
+      ViewPortDimensionName,
+      () => Omit<ViewPortDimensionState, "name" | keyof typeof defaultViewPortProps> &
+        Partial<Pick<ViewPortDimensionState, keyof typeof defaultViewPortProps>>
+    >;
   }>,
 ) => {
   const viewPorts = Object.entries(props.dimensions).map(([name, viewPortProps]) =>
-    createViewPortDimension(() => ({ name: name as ViewPortDimensionName, ...viewPortProps() })),
+    createViewPortDimension(() => ({
+      name: name as ViewPortDimensionName,
+      ...defaultViewPortProps,
+      ...viewPortProps(),
+    })),
   );
 
   const parentViewPorts = useContext(ScrollZoomViewPortContext);

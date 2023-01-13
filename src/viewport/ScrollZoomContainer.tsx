@@ -2,9 +2,9 @@ import { createEffect, createMemo, JSX, mergeProps, ParentProps, Ref, splitProps
 
 import { useViewPortDimension } from "./ScrollZoomViewPort";
 
-import styles from "./ScrollContainer.module.css";
+import styles from "./ScrollZoomContainer.module.css";
 
-const ScrollContainer = (
+const ScrollZoomContainer = (
   props: ParentProps<
     {
       ref?: Ref<HTMLDivElement>;
@@ -126,17 +126,17 @@ const ScrollContainer = (
   return (
     <div
       ref={props.ref}
+      onScroll={handleScroll}
+      onWheel={handleWheel}
+      {...divProps}
       style={{
         overflow: propsWithDefaults.showScrollbar ? "scroll" : "hidden",
         ...(typeof divProps.style === "object" && divProps.style),
       }}
       classList={{
-        [styles.ScrollContainer]: true,
+        [styles.ScrollZoomContainer]: true,
         ...divProps.classList,
       }}
-      onScroll={handleScroll}
-      onWheel={handleWheel}
-      {...divProps}
     >
       <div ref={scrollContentRef}>
         <div
@@ -164,4 +164,4 @@ const ScrollContainer = (
   );
 };
 
-export default ScrollContainer;
+export default ScrollZoomContainer;

@@ -74,7 +74,7 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
 
   return (
     <div
-      class={styles.PianoRollNotes}
+      classList={{ [styles.PianoRollNotes]: true }}
       ref={props.ref}
       onMouseDown={(event) => {
         batch(() => {
