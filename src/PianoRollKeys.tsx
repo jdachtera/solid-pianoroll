@@ -1,15 +1,39 @@
 import styles from "./PianoRollKeys.module.css";
-import { createMemo, createSignal, Index, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, Index, Show } from "solid-js";
 import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
+import { usePianoRollContext } from "./PianoRollContext";
 
 const PianoRollKeys = () => {
   const viewPort = createMemo(() => useViewPortDimension("vertical"));
+  const [isMouseDown, setIsMouseDown] = createSignal(false);
+  const context = usePianoRollContext();
+
+  const handleMouseUp = () => {
+    setIsMouseDown(false);
+  };
+  createEffect(() => {
+    if (isMouseDown()) {
+      window.addEventListener("mouseup", handleMouseUp);
+    } else {
+      window.removeEventListener("mouseup", handleMouseUp);
+    }
+  });
 
   return (
     <div class={styles.PianoRollKeys}>
       <Index each={keys}>
         {(key) => {
-          const [isDown, setIsDown] = createSignal(false);
+          const isDown = createMemo(() => context.pressedKeys.includes(key().number));
+
+          const handleKeyDown = () => {
+            context.onPressedKeysChange?.([...context.pressedKeys, key().number]);
+          };
+
+          const handleKeyUp = () => {
+            context.onPressedKeysChange?.(
+              [...context.pressedKeys].filter((number) => number !== key().number),
+            );
+          };
 
           const virtualDimensions = createMemo(() =>
             viewPort().calculatePixelDimensions(127 - key().number, 1),
@@ -27,8 +51,23 @@ const PianoRollKeys = () => {
                   [styles["white"]]: !key().isBlack,
                   [styles["down"]]: isDown(),
                 }}
-                onMouseDown={() => setIsDown(true)}
-                onMouseUp={() => setIsDown(false)}
+                onMouseDown={() => {
+                  setIsMouseDown(true);
+                  handleKeyDown();
+                }}
+                onMouseUp={() => {
+                  handleKeyUp();
+                }}
+                onMouseEnter={() => {
+                  if (isMouseDown()) {
+                    handleKeyDown();
+                  }
+                }}
+                onMouseLeave={() => {
+                  if (isMouseDown()) {
+                    handleKeyUp();
+                  }
+                }}
                 title={key().name}
                 data-index={key().number % 12}
                 style={{

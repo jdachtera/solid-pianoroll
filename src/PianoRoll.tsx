@@ -36,6 +36,8 @@ export type PianoRollProps = {
   showAllTracks?: boolean;
   showTrackList?: boolean;
 
+  pressedKeys: number[];
+
   selectedTrackIndex: number;
 
   verticalPosition: number;
@@ -55,6 +57,7 @@ export type PianoRollProps = {
   onRemoveNote?: (trackIndex: number, noteIndex: number) => void;
 
   onSelectedTrackIndexChange?: (trackIndex: number) => void;
+  onPressedKeysChange?: (pressedKeys: number[]) => void;
 };
 
 const PianoRoll = (

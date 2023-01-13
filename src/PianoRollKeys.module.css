@@ -14,7 +14,7 @@
 
 .Key {
   transition-property: background-color, box-shadow;
-  transition-duration: 400ms;
+  transition-duration: 200ms;
   transition-timing-function: ease-out;
   border-width: 0px;
   position: absolute;

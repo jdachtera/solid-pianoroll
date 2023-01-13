@@ -15,6 +15,7 @@ type PianoRollState = {
   duration: number;
   tracks: Track[];
   selectedTrackIndex: number;
+  pressedKeys: number[];
 };
 
 const createPianoRollstate = (defaultState?: Partial<PianoRollState>) => {
@@ -30,6 +31,7 @@ const createPianoRollstate = (defaultState?: Partial<PianoRollState>) => {
     duration: 0,
     tracks: [],
     selectedTrackIndex: 0,
+    pressedKeys: [],
     ...defaultState,
   });
 
@@ -98,6 +100,9 @@ const createPianoRollstate = (defaultState?: Partial<PianoRollState>) => {
   const onSelectedTrackIndexChange = (selectedTrackIndex: PianoRollState["selectedTrackIndex"]) =>
     setState("selectedTrackIndex", selectedTrackIndex);
 
+  const onPressedKeysChange = (pressedKeys: PianoRollState["pressedKeys"]) =>
+    setState("pressedKeys", pressedKeys);
+
   return mergeProps(state, {
     onPpqChange,
     onModeChange,
@@ -113,6 +118,7 @@ const createPianoRollstate = (defaultState?: Partial<PianoRollState>) => {
     onInsertNote,
     onRemoveNote,
     onSelectedTrackIndexChange,
+    onPressedKeysChange,
   });
 };
 

@@ -25,6 +25,7 @@ export const splitContextProps = (allProps: PianoRollProps & JSX.IntrinsicElemen
     "snapToGrid",
     "verticalPosition",
     "verticalZoom",
+    "pressedKeys",
     "zoom",
     "onInsertNote",
     "onNoteChange",
@@ -36,4 +37,5 @@ export const splitContextProps = (allProps: PianoRollProps & JSX.IntrinsicElemen
     "showAllTracks",
     "selectedTrackIndex",
     "onSelectedTrackIndexChange",
+    "onPressedKeysChange",
   ]);
