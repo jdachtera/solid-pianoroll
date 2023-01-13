@@ -66,7 +66,7 @@ const PianoRoll = (allProps: ParentProps<PianoRollProps>) => {
             }),
             horizontalTracks: () => ({
               pixelOffset: 0,
-              pixelSize: notesScrollerClientRect().width,
+              pixelSize: tracksScrollerClientRect().width,
             }),
             verticalTracks: () => ({
               pixelOffset: tracksScrollerClientRect().top,
