@@ -4,35 +4,25 @@ import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
 
 const PlayHead = (
   allProps: {
-    playHeadPosition?: number;
+    position: number;
+    onPositionChange?: (playHeadPosition: number) => void;
     sync?: boolean;
-    onPlayHeadPositionChange?: (playHeadPosition: number) => void;
-    onPositionChange?: (position: number) => void;
   } & JSX.IntrinsicElements["div"],
 ) => {
-  const propsWithDefauls = mergeProps({ playHeadPosition: 0, sync: false }, allProps);
-  const [props, divProps] = splitProps(propsWithDefauls, [
-    "playHeadPosition",
-    "sync",
-    "onPlayHeadPositionChange",
-    "onPositionChange",
-  ]);
+  const propsWithDefauls = mergeProps(allProps);
+  const [props, divProps] = splitProps(propsWithDefauls, ["position", "sync", "onPositionChange"]);
 
   const viewPort = useViewPortDimension("horizontal");
   createEffect(() => {
     if (!props.sync) return;
 
     const maxPosition = viewPort.range;
-    const newPosition = clamp(
-      props.playHeadPosition - viewPort.range / viewPort.zoom / 2,
-      0,
-      maxPosition,
-    );
+    const newPosition = clamp(props.position - viewPort.range / viewPort.zoom / 2, 0, maxPosition);
 
-    props.onPositionChange?.(newPosition);
+    viewPort.onPositionChange?.(newPosition);
   });
 
-  const leftPosition = createMemo(() => viewPort.calculatePixelOffset(props.playHeadPosition));
+  const leftPosition = createMemo(() => viewPort.calculatePixelOffset(props.position));
 
   return (
     <div
@@ -52,7 +42,7 @@ const PlayHead = (
         event.stopPropagation();
         const handleMouseMove = ({ clientX }: MouseEvent) => {
           const newPosition = viewPort.calculatePosition(clientX);
-          props.onPlayHeadPositionChange?.(newPosition);
+          props.onPositionChange?.(newPosition);
         };
         const handleMouseUp = () => {
           window.removeEventListener("mousemove", handleMouseMove);

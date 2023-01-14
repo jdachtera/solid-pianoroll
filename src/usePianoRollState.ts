@@ -17,7 +17,7 @@ type PianoRollState = {
   duration: number;
   tracks: Track[];
   selectedTrackIndex: number;
-  pressedKeys: number[];
+  pressedKeys: number[][];
 };
 
 const defaultState: PianoRollState = {
@@ -114,12 +114,24 @@ const createPianoRollstate = (initialState?: Partial<PianoRollState>) => {
     ]);
   };
 
-  const onNoteDown = (keyNumber: number) => {
-    handlers.onPressedKeysChange?.([...state.pressedKeys, keyNumber]);
+  const onNoteDown = (trackIndex: number, keyNumber: number) => {
+    const trackPressedKeys = state.pressedKeys[trackIndex] ?? [];
+
+    handlers.onPressedKeysChange?.([
+      ...state.pressedKeys.slice(0, trackIndex),
+      [...trackPressedKeys, keyNumber],
+      ...state.pressedKeys.slice(trackIndex + 1),
+    ]);
   };
 
-  const onNoteUp = (keyNumber: number) => {
-    handlers.onPressedKeysChange?.([...state.pressedKeys].filter((number) => number !== keyNumber));
+  const onNoteUp = (trackIndex: number, keyNumber: number) => {
+    const trackPressedKeys = state.pressedKeys[trackIndex] ?? [];
+
+    handlers.onPressedKeysChange?.([
+      ...state.pressedKeys.slice(0, trackIndex),
+      trackPressedKeys.filter((number) => number !== keyNumber),
+      ...state.pressedKeys.slice(trackIndex + 1),
+    ]);
   };
 
   return mergeProps(state, {

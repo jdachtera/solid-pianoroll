@@ -30,8 +30,8 @@ const Demo: Component = () => {
 
   const pianoRollState = createPianoRollstate();
 
-  const onNoteDown = (keyNumber: number) => {
-    pianoRollState.onNoteDown(keyNumber);
+  const onNoteDown = (trackIndex: number, keyNumber: number) => {
+    pianoRollState.onNoteDown(trackIndex, keyNumber);
     const synth = synths()?.[pianoRollState.selectedTrackIndex];
 
     if (synth) {
@@ -39,8 +39,8 @@ const Demo: Component = () => {
     }
   };
 
-  const onNoteUp = (keyNumber: number) => {
-    pianoRollState.onNoteUp(keyNumber);
+  const onNoteUp = (trackIndex: number, keyNumber: number) => {
+    pianoRollState.onNoteUp(trackIndex, keyNumber);
     const synth = synths()?.[pianoRollState.selectedTrackIndex];
 
     if (synth) {
@@ -110,7 +110,7 @@ const Demo: Component = () => {
           const note = untrack(() => pianoRollState.tracks?.[trackIndex()]?.notes[noteIndex]);
           if (!note) return;
 
-          Tone.Draw.schedule(() => pianoRollState.onNoteDown(note.midi), time);
+          Tone.Draw.schedule(() => pianoRollState.onNoteDown(trackIndex(), note.midi), time);
 
           synth.triggerAttackRelease(
             Tone.Midi(note.midi).toFrequency(),
@@ -120,7 +120,7 @@ const Demo: Component = () => {
           );
 
           Tone.Draw.schedule(
-            () => pianoRollState.onNoteUp(note.midi),
+            () => pianoRollState.onNoteUp(trackIndex(), note.midi),
             time + Time(`${note.durationTicks}i`).toSeconds(),
           );
         },
@@ -211,9 +211,10 @@ const Demo: Component = () => {
           showTrackList
         >
           <PlayHead
-            playHeadPosition={playHeadPosition()}
+            sync
+            position={playHeadPosition()}
             style={{ "z-index": 3 }}
-            onPlayHeadPositionChange={(newPosition) => {
+            onPositionChange={(newPosition) => {
               transport.seconds = Time(newPosition, "i").toSeconds();
               setPlayHeadPosition(newPosition);
             }}

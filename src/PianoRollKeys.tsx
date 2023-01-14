@@ -13,6 +13,7 @@ const PianoRollKeys = () => {
   const handleMouseUp = () => {
     setIsMouseDown(false);
   };
+
   createEffect(() => {
     if (isMouseDown()) {
       window.addEventListener("mouseup", handleMouseUp);
@@ -26,7 +27,9 @@ const PianoRollKeys = () => {
       <ScrollZoomContainer horizontalDimensionName="horizontalKeys" showScrollbar={false}>
         <Index each={keys}>
           {(key) => {
-            const isDown = createMemo(() => context.pressedKeys.includes(key().number));
+            const isDown = createMemo(() =>
+              context.pressedKeys[context.selectedTrackIndex]?.includes(key().number),
+            );
             const virtualDimensions = createMemo(() =>
               verticalViewPort().calculatePixelDimensions(127 - key().number, 1),
             );
@@ -45,19 +48,19 @@ const PianoRollKeys = () => {
                   }}
                   onMouseDown={() => {
                     setIsMouseDown(true);
-                    context.onNoteDown(key().number);
+                    context.onNoteDown(context.selectedTrackIndex, key().number);
                   }}
                   onMouseUp={() => {
-                    context.onNoteUp(key().number);
+                    context.onNoteUp(context.selectedTrackIndex, key().number);
                   }}
                   onMouseEnter={() => {
                     if (isMouseDown()) {
-                      context.onNoteDown(key().number);
+                      context.onNoteDown(context.selectedTrackIndex, key().number);
                     }
                   }}
                   onMouseLeave={() => {
                     if (isMouseDown()) {
-                      context.onNoteUp(key().number);
+                      context.onNoteUp(context.selectedTrackIndex, key().number);
                     }
                   }}
                   title={key().name}
@@ -86,17 +89,7 @@ const PianoRollKeys = () => {
                       .filter((item) => !!item)
                       .join(", "),
                   }}
-                >
-                  <Show when={key().isBlack && false}>
-                    <div
-                      class={styles["black-separator"]}
-                      style={{
-                        top: `${virtualDimensions().offset}px`,
-                        height: `${virtualDimensions().size / 2 - 0.25}px`,
-                      }}
-                    ></div>
-                  </Show>
-                </div>
+                ></div>
               </Show>
             );
           }}

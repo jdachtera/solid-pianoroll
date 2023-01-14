@@ -21,6 +21,8 @@
   left: -20%;
   border-color: #000;
   border-style: solid;
+  transform: rotateX(0deg);
+  perspective: 100px;
 }
 
 .black {
@@ -35,9 +37,12 @@
   background: white;
   border-top-width: 0.5px;
   border-bottom-width: 0.5px;
+  border-top-right-radius: 5%;
+  border-bottom-right-radius: 5%;
 }
 
 .down {
   transition: none;
   background: red;
+  transform: rotateX(0deg) rotateY(20deg);
 }
