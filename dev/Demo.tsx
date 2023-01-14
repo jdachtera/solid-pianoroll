@@ -1,19 +1,27 @@
 import { Midi } from "@tonejs/midi";
 import * as Tone from "tone";
-import { Component, createEffect, createResource, createSignal, untrack } from "solid-js";
+import {
+  Component,
+  createEffect,
+  createMemo,
+  createResource,
+  createSignal,
+  mapArray,
+  untrack,
+} from "solid-js";
 import { PianoRoll, PlayHead, createPianoRollstate } from "../src";
 import { GridDivision } from "src/PianoRoll";
 
 import styles from "./Demo.module.css";
-import { isNumber, PolySynth, TransportTime } from "tone";
+import { isNumber, Time, TransportTime } from "tone";
+import { Note } from "src/types";
 
 const Demo: Component = () => {
-  const [url, setUrl] = createSignal("./MIDI_sample.mid");
+  const [url, setUrl] = createSignal("./examples_bach_846.mid");
   const [inputUrl, setInputUrl] = createSignal(untrack(() => url()));
 
   const [playHeadPosition, setPlayHeadPosition] = createSignal(0);
   const [isPlaying, setIsPlaying] = createSignal(false);
-  const [synths, setSynths] = createSignal<PolySynth[]>();
 
   const [parsedMidi] = createResource(url, async (url) => {
     const midi = await Midi.fromUrl(url);
@@ -21,6 +29,48 @@ const Demo: Component = () => {
   });
 
   const pianoRollState = createPianoRollstate();
+
+  const onNoteDown = (keyNumber: number) => {
+    pianoRollState.onNoteDown(keyNumber);
+    const synth = synths()?.[pianoRollState.selectedTrackIndex];
+
+    if (synth) {
+      synth.triggerAttack(Tone.Midi(keyNumber).toFrequency());
+    }
+  };
+
+  const onNoteUp = (keyNumber: number) => {
+    pianoRollState.onNoteUp(keyNumber);
+    const synth = synths()?.[pianoRollState.selectedTrackIndex];
+
+    if (synth) {
+      synth.triggerRelease(Tone.Midi(keyNumber).toFrequency());
+    }
+  };
+
+  const onNoteChange = (trackIndex: number, noteIndex: number, note: Note) => {
+    const existingNote = pianoRollState.tracks[trackIndex]?.notes[noteIndex];
+    if (existingNote) {
+      parts()[trackIndex]?.remove(`${existingNote.ticks}i`, noteIndex);
+      parts()[trackIndex]?.add(`${note.ticks}i`, noteIndex);
+    }
+
+    return pianoRollState.onNoteChange(trackIndex, noteIndex, note);
+  };
+
+  const onInsertNote = (trackIndex: number, note: Note) => {
+    const noteIndex = pianoRollState.onInsertNote(trackIndex, note);
+    parts()[trackIndex]?.add(`${note.ticks}i`, noteIndex);
+    return noteIndex;
+  };
+
+  const onRemoveNote = (trackIndex: number, noteIndex: number) => {
+    const existingNote = pianoRollState.tracks[trackIndex]?.notes[noteIndex];
+    if (existingNote) {
+      parts()[trackIndex]?.remove(`${existingNote.ticks}i`, noteIndex);
+    }
+    return pianoRollState.onRemoveNote(trackIndex, noteIndex);
+  };
 
   createEffect(() => {
     const midi = parsedMidi();
@@ -30,6 +80,59 @@ const Demo: Component = () => {
     transport.bpm.value = midi.header.tempos[0]?.bpm ?? transport.bpm.value;
     pianoRollState.onPpqChange(midi.header.ppq);
     pianoRollState.onTracksChange(midi.tracks ?? []);
+  });
+
+  const numberOfTracks = createMemo(() => pianoRollState.tracks.length);
+
+  const synths = mapArray(
+    () => Array.from({ length: numberOfTracks() }),
+    () => {
+      return new Tone.PolySynth(Tone.Synth, {
+        envelope: {
+          attack: 0.02,
+          decay: 0.1,
+          sustain: 0.3,
+          release: 1,
+        },
+      }).toDestination();
+    },
+  );
+
+  const parts = mapArray(
+    () => Array.from({ length: numberOfTracks() }),
+    (_, trackIndex) => {
+      const synth = synths()?.[trackIndex()];
+
+      if (!synth) return;
+
+      return new Tone.Part(
+        (time, noteIndex) => {
+          const note = untrack(() => pianoRollState.tracks?.[trackIndex()]?.notes[noteIndex]);
+          if (!note) return;
+
+          Tone.Draw.schedule(() => pianoRollState.onNoteDown(note.midi), time);
+
+          synth.triggerAttackRelease(
+            Tone.Midi(note.midi).toFrequency(),
+            `${note.durationTicks}i`,
+            time,
+            note.velocity,
+          );
+
+          Tone.Draw.schedule(
+            () => pianoRollState.onNoteUp(note.midi),
+            time + Time(`${note.durationTicks}i`).toSeconds(),
+          );
+        },
+        untrack(() => pianoRollState.tracks?.[trackIndex()]?.notes ?? []).map(
+          (note, index) => [`${note.ticks}i`, index] as [string, number],
+        ),
+      ).start();
+    },
+  );
+
+  createEffect(() => {
+    parts().forEach((part) => part?.start());
   });
 
   createEffect(() => {
@@ -66,45 +169,8 @@ const Demo: Component = () => {
 
   createEffect(() => {
     if (isPlaying()) {
-      setSynths(
-        parsedMidi()?.tracks.map((track) => {
-          //create a synth for each track
-          const synth = new Tone.PolySynth(Tone.Synth, {
-            envelope: {
-              attack: 0.02,
-              decay: 0.1,
-              sustain: 0.3,
-              release: 1,
-            },
-          }).toDestination();
-
-          //schedule all of the events
-          track.notes.forEach((note) => {
-            transport.schedule((time) => {
-              synth.triggerAttackRelease(
-                Tone.Midi(note.midi).toFrequency(),
-                `${note.durationTicks}i`,
-                time,
-                note.velocity,
-              );
-            }, `${note.ticks}i`);
-          });
-
-          return synth;
-        }) ?? [],
-      );
       transport.start();
-    }
-  });
-
-  createEffect(() => {
-    if (!isPlaying()) {
-      synths()?.forEach((synth) => {
-        synth.releaseAll();
-      });
-      transport.cancel();
-      setSynths(undefined);
-
+    } else {
       transport.pause();
     }
   });
@@ -135,8 +201,23 @@ const Demo: Component = () => {
         }}
       >
         {pianoRollState.selectedTrackIndex}
-        <PianoRoll {...pianoRollState} showTrackList>
-          <PlayHead playHeadPosition={playHeadPosition()} style={{ "z-index": 3 }} />
+        <PianoRoll
+          {...pianoRollState}
+          onNoteUp={onNoteUp}
+          onNoteDown={onNoteDown}
+          onInsertNote={onInsertNote}
+          onNoteChange={onNoteChange}
+          onRemoveNote={onRemoveNote}
+          showTrackList
+        >
+          <PlayHead
+            playHeadPosition={playHeadPosition()}
+            style={{ "z-index": 3 }}
+            onPlayHeadPositionChange={(newPosition) => {
+              transport.seconds = Time(newPosition, "i").toSeconds();
+              setPlayHeadPosition(newPosition);
+            }}
+          />
         </PianoRoll>
       </div>
 

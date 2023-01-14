@@ -50,11 +50,8 @@ const PlayHead = (
       onMouseDown={(event) => {
         event.preventDefault();
         event.stopPropagation();
-        const handleMouseMove = ({ movementX }: MouseEvent) => {
-          const { parentElement } = event.currentTarget;
-          if (!parentElement) return;
-
-          const newPosition = viewPort.calculatePosition(leftPosition() + movementX);
+        const handleMouseMove = ({ clientX }: MouseEvent) => {
+          const newPosition = viewPort.calculatePosition(clientX);
           props.onPlayHeadPositionChange?.(newPosition);
         };
         const handleMouseUp = () => {
