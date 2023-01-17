@@ -107,6 +107,8 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
     window.removeEventListener("mousemove", handleMouseMove);
     window.removeEventListener("mouseup", stopDragging);
     setIsDragging(false);
+    setCurrentNoteIndex(-1);
+    setCurrentNoteTrackIndex(-1);
   };
 
   const startDragging = () => {
