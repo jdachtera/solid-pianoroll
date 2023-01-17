@@ -3,6 +3,7 @@ import { usePianoRollContext } from "./PianoRollContext";
 import { blackKeys, keys } from "./PianoRollKeys";
 import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
 import styles from "./PianoRollGrid.module.css";
+import usePianoRollGrid from "./usePianoRollGrid";
 
 const PianoRollGrid = () => {
   const context = usePianoRollContext();
@@ -11,65 +12,23 @@ const PianoRollGrid = () => {
     useViewPortDimension(context.mode === "keys" ? "vertical" : "verticalTracks"),
   );
   const horizontalViewPort = createMemo(() => useViewPortDimension("horizontal"));
-
-  const measureTicks = createMemo(() => context.ppq * 4);
-  const selectedGridDivisorTicks = createMemo(() => measureTicks() / context.gridDivision);
-
-  function calculateVisibleGridDivisorTicks(value: number): number {
-    const visibleRange = horizontalViewPort().calculateVisibleRange();
-
-    if (visibleRange <= 0) return 0;
-
-    if (visibleRange / value > 100) {
-      return calculateVisibleGridDivisorTicks(value * 2);
-    }
-
-    if (visibleRange / value < 30) {
-      return calculateVisibleGridDivisorTicks(value / 2);
-    }
-
-    return value;
-  }
-
-  const gridDivisorTicks = createMemo(() =>
-    calculateVisibleGridDivisorTicks(selectedGridDivisorTicks()),
-  );
-
-  const gridArray = createMemo(() => {
-    const numberOfLines = Math.ceil(
-      horizontalViewPort().calculateVisibleRange() / gridDivisorTicks() + 1,
-    );
-    const startIndex = Math.floor(context.position / gridDivisorTicks());
-
-    return Array.from({ length: numberOfLines }).map((_, index) => ({
-      index: index + startIndex,
-      ticks: (index + startIndex) * gridDivisorTicks(),
-    }));
-  });
+  const gridArray = usePianoRollGrid();
 
   return (
     <div class={styles.PianoRollGrid}>
       <Index each={gridArray()}>
         {(entry) => {
-          const virtualDimensions = createMemo(() =>
-            horizontalViewPort().calculatePixelDimensions(entry().ticks, gridDivisorTicks()),
-          );
-
           return (
-            <Show when={horizontalViewPort().isVisible(virtualDimensions())}>
+            <Show when={horizontalViewPort().isVisible(entry().virtualDimensions)}>
               <div
                 classList={{
                   [styles["PianoRollGrid-Time"]]: true,
-                  [styles["Highlighted"]]:
-                    Math.ceil(((entry().index + 1) * selectedGridDivisorTicks()) / measureTicks()) %
-                      2 ===
-                    0,
-                  [styles["HighlightedBorder"]]:
-                    (entry().index * gridDivisorTicks()) % selectedGridDivisorTicks() === 0,
+                  [styles["Highlighted"]]: entry().isHighlighted,
+                  [styles["HighlightedBorder"]]: entry().hasHighlightedBorder,
                 }}
                 style={{
-                  left: `${virtualDimensions().offset}px`,
-                  width: `${virtualDimensions().size}px`,
+                  left: `${entry().virtualDimensions.offset}px`,
+                  width: `${entry().virtualDimensions.size}px`,
                 }}
               ></div>
             </Show>

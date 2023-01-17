@@ -57,6 +57,9 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
   };
 
   const handleMouseMove = (mouseMoveEvent: MouseEvent) => {
+    mouseMoveEvent.preventDefault();
+    mouseMoveEvent.stopPropagation();
+
     const note = getInitialNote();
     if (!note) return;
 
@@ -125,6 +128,9 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
       classList={{ [styles.PianoRollNotes]: true }}
       ref={props.ref}
       onMouseDown={(mouseDownEvent) => {
+        mouseDownEvent.preventDefault();
+        mouseDownEvent.stopPropagation();
+
         const { targetTrackIndex, midi, horiontalPosition } =
           calculateNoteDragValues(mouseDownEvent);
 

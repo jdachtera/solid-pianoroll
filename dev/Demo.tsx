@@ -23,6 +23,7 @@ const Demo: Component = () => {
   const [playHeadPosition, setPlayHeadPosition] = createSignal(0);
   const [isPlaying, setIsPlaying] = createSignal(false);
   const [syncToPlayHead, setSyncToPlayHead] = createSignal(false);
+  const [showTrackList, setShowTrackList] = createSignal(true);
 
   const [parsedMidi] = createResource(url, async (url) => {
     const midi = await Midi.fromUrl(url);
@@ -186,11 +187,6 @@ const Demo: Component = () => {
         </a>
       </p>
 
-      <nav>
-        <button onClick={() => pianoRollState.onModeChange("keys")}>Keys</button>
-        <button onClick={() => pianoRollState.onModeChange("tracks")}>Tracks</button>
-      </nav>
-
       <div
         style={{
           flex: 1,
@@ -209,7 +205,7 @@ const Demo: Component = () => {
           onInsertNote={onInsertNote}
           onNoteChange={onNoteChange}
           onRemoveNote={onRemoveNote}
-          showTrackList
+          showTrackList={showTrackList()}
         >
           <PlayHead
             sync={syncToPlayHead()}
@@ -270,6 +266,14 @@ const Demo: Component = () => {
               onChange={() => setSyncToPlayHead(!syncToPlayHead())}
             />
             Sync to playback position
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={showTrackList()}
+              onChange={() => setShowTrackList(!showTrackList())}
+            />
+            Show Track List
           </label>
         </div>
       </div>

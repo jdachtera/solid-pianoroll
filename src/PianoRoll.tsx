@@ -12,6 +12,7 @@ import createPianoRollstate from "./usePianoRollState";
 import PianoRollScrollZoomViewPort from "./PianoRollScrollZoomViewPort";
 import PianoRollNotesScroller from "./PianoRollNotesScroller";
 import PianoRollTrackListScroller from "./PianoRollTrackListScroller";
+import PianoRollScale from "./PianoRollScale";
 
 export type GridDivision = 1 | 2 | 4 | 8 | 16 | 32 | 64;
 
@@ -31,22 +32,64 @@ const PianoRoll = (allProps: ParentProps<PianoRollProps>) => {
         <PianoRollScrollZoomViewPort>
           <div class={styles.PianoRollContainer}>
             <ZoomSliderControl orientation="vertical" dimensionName="verticalTracks" />
-            <div class={styles.PianoRollLeftColumn}>
+            <div
+              classList={{
+                [styles.PianoRollLeftColumn]: true,
+                [styles.showTrackList]: context.showTrackList,
+              }}
+            >
               <Show when={context.showTrackList}>
-                <PianoRollTrackListScroller>
-                  <PianoRollTrackList />
-                </PianoRollTrackListScroller>
+                <div
+                  style={{
+                    height: "30px",
+                  }}
+                >
+                  <button
+                    title={context.mode === "keys" ? "Tracks Mode" : "Keys Mode"}
+                    onClick={() =>
+                      context.onModeChange(context.mode === "keys" ? "tracks" : "keys")
+                    }
+                    style={{
+                      "font-size": "16px",
+                      "line-height": "16px",
+                      cursor: "pointer",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div>{context.mode === "keys" ? "≡" : "🎹"}</div>
+                  </button>
+                </div>
               </Show>
-              <Show when={context.mode === "keys"}>
-                <PianoRollKeys />
-              </Show>
+              <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+                <Show when={context.showTrackList}>
+                  <PianoRollTrackListScroller>
+                    <PianoRollTrackList />
+                  </PianoRollTrackListScroller>
+                </Show>
+                <Show when={context.mode === "keys"}>
+                  <PianoRollKeys />
+                </Show>
+              </div>
             </div>
 
-            <PianoRollNotesScroller>
-              {allProps.children}
-              <PianoRollGrid />
-              <PianoRollNotes />
-            </PianoRollNotesScroller>
+            <div
+              style={{
+                width: "100%",
+                display: "flex",
+                height: "100%",
+                "flex-direction": "column",
+                overflow: "hidden",
+              }}
+            >
+              <div style={{ height: "30px" }}>
+                <PianoRollScale />
+              </div>
+              <PianoRollNotesScroller>
+                {allProps.children}
+                <PianoRollGrid />
+                <PianoRollNotes />
+              </PianoRollNotesScroller>
+            </div>
 
             <ZoomSliderControl orientation="vertical" disabled={context.mode !== "keys"} />
           </div>
