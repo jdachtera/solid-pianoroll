@@ -8,6 +8,19 @@
   position: absolute;
   border-style: solid;
   border-color: gray;
+  width: 100%;
+  border-width: 0;
+}
+.PianoRollGrid-Row.IsDark {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.PianoRollGrid-Row.Key {
+  border-width: 0px 1px 0px 0;
+}
+.PianoRollGrid-Row.IsBlackAndNextIsWhite {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-width: 0.1px 1px 0.1px 0;
 }
 
 .PianoRollGrid-Time {
@@ -17,4 +30,14 @@
   height: 100%;
   border-left-style: solid;
   border-left-width: 0.5px;
+  border-left-color: #bbb;
+  background: #ccc;
+}
+
+.PianoRollGrid-Time.Highlighted {
+  background: #ddd;
+}
+
+.PianoRollGrid-Time.HighlightedBorder {
+  border-left-color: gray;
 }

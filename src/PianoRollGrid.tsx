@@ -56,22 +56,20 @@ const PianoRollGrid = () => {
           );
 
           return (
-            <Show when={virtualDimensions().size > 0}>
+            <Show when={horizontalViewPort().isVisible(virtualDimensions())}>
               <div
-                class={styles["PianoRollGrid-Time"]}
-                style={{
-                  background:
-                    Math.ceil((entry().index + 1 * selectedGridDivisorTicks()) / measureTicks()) %
+                classList={{
+                  [styles["PianoRollGrid-Time"]]: true,
+                  [styles["Highlighted"]]:
+                    Math.ceil(((entry().index + 1) * selectedGridDivisorTicks()) / measureTicks()) %
                       2 ===
-                    0
-                      ? "#ddd"
-                      : "#ccc",
+                    0,
+                  [styles["HighlightedBorder"]]:
+                    (entry().index * gridDivisorTicks()) % selectedGridDivisorTicks() === 0,
+                }}
+                style={{
                   left: `${virtualDimensions().offset}px`,
                   width: `${virtualDimensions().size}px`,
-                  "border-left-color":
-                    (entry().index * gridDivisorTicks()) % selectedGridDivisorTicks() === 0
-                      ? "gray"
-                      : "#bbb",
                 }}
               ></div>
             </Show>
@@ -86,19 +84,18 @@ const PianoRollGrid = () => {
             );
 
             return (
-              <Show when={virtualDimensions().size > 0}>
+              <Show when={verticalViewPort().isVisible(virtualDimensions())}>
                 <div
-                  class={styles["PianoRollGrid-Row"]}
+                  classList={{
+                    [styles["PianoRollGrid-Row"]]: true,
+                    [styles["Key"]]: true,
+                    [styles["IsDark"]]: key().isBlack,
+                    [styles["IsBlackAndNextIsWhite"]]:
+                      !key().isBlack && !blackKeys.includes((key().number + 1) % 12),
+                  }}
                   style={{
                     top: `${virtualDimensions().offset}px`,
                     height: `${virtualDimensions().size}px`,
-                    width: "100%",
-                    "background-color": key().isBlack ? "rgba(0,0,0,0.2)" : "none",
-                    "border-width": `${
-                      !key().isBlack && !blackKeys.includes((key().number + 1) % 12) ? "0.1px" : 0
-                    } 1px ${
-                      !key().isBlack && !blackKeys.includes((key().number - 1) % 12) ? "0.1px" : 0
-                    } 0`,
                   }}
                 ></div>
               </Show>
@@ -115,15 +112,15 @@ const PianoRollGrid = () => {
             );
 
             return (
-              <Show when={virtualDimensions().size > 0}>
+              <Show when={verticalViewPort().isVisible(virtualDimensions())}>
                 <div
-                  class={styles["PianoRollGrid-Row"]}
+                  classList={{
+                    [styles["PianoRollGrid-Row"]]: true,
+                    [styles["IsDark"]]: index() % 2 === 0,
+                  }}
                   style={{
                     top: `${virtualDimensions().offset}px`,
                     height: `${virtualDimensions().size}px`,
-                    width: "100%",
-                    "background-color": index() % 2 === 0 ? "rgba(0,0,0,0.2)" : "none",
-                    "border-width": 0,
                   }}
                 ></div>
               </Show>

@@ -67,7 +67,7 @@ const ScrollZoomContainer = (
 
       if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
         horizontalViewPort()?.onZoomChange?.(
-          horizontalViewPort().zoom * (1 + event.deltaX / horizontalViewPort().pixelSize),
+          horizontalViewPort().zoom / (1 + event.deltaX / horizontalViewPort().pixelSize),
         );
         const maxPosition = horizontalViewPort().calculateMaxPosition();
 
@@ -76,7 +76,7 @@ const ScrollZoomContainer = (
         );
       } else {
         verticalViewPort()?.onZoomChange?.(
-          verticalViewPort().zoom * (1 + event.deltaY / verticalViewPort().pixelSize),
+          verticalViewPort().zoom / (1 + event.deltaY / verticalViewPort().pixelSize),
         );
         const maxVerticalPosition = verticalViewPort().calculateMaxPosition();
 

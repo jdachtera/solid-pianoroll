@@ -2,6 +2,7 @@ import { mergeProps } from "solid-js";
 import { createStore } from "solid-js/store";
 import { GridDivision } from "./PianoRoll";
 import { Note, Track } from "./types";
+import { ClientRect } from "./useBoundingClientRect";
 
 type PianoRollState = {
   ppq: number;
@@ -18,6 +19,8 @@ type PianoRollState = {
   tracks: Track[];
   selectedTrackIndex: number;
   pressedKeys: Record<number, Record<number, boolean>>;
+  notesScrollerClientRect: Pick<ClientRect, "left" | "width" | "top" | "height">;
+  tracksScrollerClientRect: Pick<ClientRect, "left" | "width" | "top" | "height">;
 };
 
 const defaultState: PianoRollState = {
@@ -35,6 +38,8 @@ const defaultState: PianoRollState = {
   tracks: [],
   selectedTrackIndex: 0,
   pressedKeys: {},
+  notesScrollerClientRect: { left: 0, width: 0, top: 0, height: 0 },
+  tracksScrollerClientRect: { left: 0, width: 0, top: 0, height: 0 },
 };
 
 const propNameToHandlerName = (name: string) => `on${name[0]?.toUpperCase()}${name.slice(1)}Change`;

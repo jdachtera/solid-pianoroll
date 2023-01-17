@@ -38,7 +38,7 @@ const PianoRollKeys = () => {
             const nextIsBlack = blackKeys.includes((key().number + 1) % 12);
 
             return (
-              <Show when={virtualDimensions().size > 0}>
+              <Show when={verticalViewPort().isVisible(virtualDimensions())}>
                 <div
                   classList={{
                     [styles["Key"]]: true,
@@ -75,19 +75,16 @@ const PianoRollKeys = () => {
                       (!key().isBlack && nextIsBlack ? virtualDimensions().size / 2 : 0) +
                       (!key().isBlack && previousIsBlack ? virtualDimensions().size / 2 : 0)
                     }px`,
-                    "box-shadow": [
+                    "box-shadow":
                       `0px 0px ${Math.min(virtualDimensions().size / 20, 1)}px ${Math.min(
                         virtualDimensions().size / 50,
                         1,
-                      )}px rgba(0, 0, 0, 0.5) ${key().isBlack ? "" : "inset"}`,
-                      isDown() &&
-                        `0px 0px ${Math.min(virtualDimensions().size / 8, 2)}px ${Math.min(
-                          virtualDimensions().size / 20,
-                          2,
-                        )}px rgba(0, 0, 0, 0.5) inset`,
-                    ]
-                      .filter((item) => !!item)
-                      .join(", "),
+                      )}px rgba(0, 0, 0, 0.5) ${key().isBlack ? "" : "inset"}` + isDown()
+                        ? `0px 0px ${Math.min(virtualDimensions().size / 8, 2)}px ${Math.min(
+                            virtualDimensions().size / 20,
+                            2,
+                          )}px rgba(0, 0, 0, 0.5) inset`
+                        : "",
                   }}
                 ></div>
               </Show>

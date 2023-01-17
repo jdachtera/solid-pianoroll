@@ -20,7 +20,10 @@ const ZoomSliderControl = (
       step={0.01}
       {...props}
       value={dimension().zoom}
-      onInput={(event) => dimension().onZoomChange?.(event.currentTarget.valueAsNumber)}
+      onInput={(event) => {
+        const value = event.currentTarget.valueAsNumber;
+        dimension().onZoomChange?.(value);
+      }}
       type="range"
       {...{ orient: propsWithDefaults.orientation }}
       style={
