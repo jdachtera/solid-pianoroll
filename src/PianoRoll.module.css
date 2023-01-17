@@ -12,3 +12,9 @@
   display: flex;
   flex-direction: row;
 }
+
+.PianoRollLeftColumn {
+  display: flex;
+  width: 30%;
+  max-width: 250px;
+}

@@ -13,4 +13,10 @@
   border-style: solid;
   border-right-width: 1px;
   border-bottom-width: 1px;
+  cursor: "pointer";
+  background: "lightgrey";
+
+  &.selected {
+    background: "gray";
+  }
 }

@@ -31,14 +31,15 @@
   border-bottom-right-radius: 12%;
   margin-left: -20%;
   z-index: 1;
+  border: 1px black outset;
 }
 
 .white {
   background: white;
   border-top-width: 0.5px;
   border-bottom-width: 0.5px;
-  border-top-right-radius: 5%;
-  border-bottom-right-radius: 5%;
+  border-top-right-radius: 4%;
+  border-bottom-right-radius: 4%;
 }
 
 .down {

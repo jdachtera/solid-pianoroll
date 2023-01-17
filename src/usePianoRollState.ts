@@ -17,7 +17,7 @@ type PianoRollState = {
   duration: number;
   tracks: Track[];
   selectedTrackIndex: number;
-  pressedKeys: number[][];
+  pressedKeys: Record<number, Record<number, boolean>>;
 };
 
 const defaultState: PianoRollState = {
@@ -34,7 +34,7 @@ const defaultState: PianoRollState = {
   duration: 0,
   tracks: [],
   selectedTrackIndex: 0,
-  pressedKeys: [],
+  pressedKeys: {},
 };
 
 const propNameToHandlerName = (name: string) => `on${name[0]?.toUpperCase()}${name.slice(1)}Change`;
@@ -47,6 +47,7 @@ export const pianoRollStatePropNames = [
   "onRemoveNote",
   "onNoteDown",
   "onNoteUp",
+  "isKeyDown",
 ] as (keyof ReturnType<typeof createPianoRollstate>)[];
 
 const createPianoRollstate = (initialState?: Partial<PianoRollState>) => {
@@ -114,25 +115,26 @@ const createPianoRollstate = (initialState?: Partial<PianoRollState>) => {
     ]);
   };
 
-  const onNoteDown = (trackIndex: number, keyNumber: number) => {
-    const trackPressedKeys = state.pressedKeys[trackIndex] ?? [];
+  const updateKeyPressedState = (trackIndex: number, keyNumber: number, value: boolean) => {
+    handlers.onPressedKeysChange?.({
+      ...state.pressedKeys,
+      [trackIndex]: {
+        ...state.pressedKeys[trackIndex],
+        [keyNumber]: value,
+      },
+    });
+  };
 
-    handlers.onPressedKeysChange?.([
-      ...state.pressedKeys.slice(0, trackIndex),
-      [...trackPressedKeys, keyNumber],
-      ...state.pressedKeys.slice(trackIndex + 1),
-    ]);
+  const onNoteDown = (trackIndex: number, keyNumber: number) => {
+    updateKeyPressedState(trackIndex, keyNumber, true);
   };
 
   const onNoteUp = (trackIndex: number, keyNumber: number) => {
-    const trackPressedKeys = state.pressedKeys[trackIndex] ?? [];
-
-    handlers.onPressedKeysChange?.([
-      ...state.pressedKeys.slice(0, trackIndex),
-      trackPressedKeys.filter((number) => number !== keyNumber),
-      ...state.pressedKeys.slice(trackIndex + 1),
-    ]);
+    updateKeyPressedState(trackIndex, keyNumber, false);
   };
+
+  const isKeyDown = (trackIndex: number, keyNumber: number) =>
+    !!state.pressedKeys[trackIndex]?.[keyNumber];
 
   return mergeProps(state, {
     ...handlers,
@@ -141,6 +143,7 @@ const createPianoRollstate = (initialState?: Partial<PianoRollState>) => {
     onRemoveNote,
     onNoteDown,
     onNoteUp,
+    isKeyDown,
   });
 };
 

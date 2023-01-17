@@ -1,8 +1,9 @@
-import { batch, createMemo, createSignal, For, Ref, Show } from "solid-js";
+import { createMemo, createSignal, For, Ref, Show } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
 import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
 import styles from "./PianoRollNotes.module.scss";
 import { clamp } from "./viewport/createViewPortDimension";
+import { Note } from "./types";
 
 type NoteDragMode = "trimStart" | "move" | "trimEnd" | undefined;
 
@@ -16,21 +17,20 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
 
   const gridDivisionTicks = createMemo(() => (context.ppq * 4) / context.gridDivision);
 
+  const [isDragging, setIsDragging] = createSignal(false);
+  const [noteDragMode, setNoteDragMode] = createSignal<NoteDragMode>();
+  const [currentNoteIndex, setCurrentNoteIndex] = createSignal(-1);
+  const [currentNoteTrackIndex, setCurrentNoteTrackIndex] = createSignal(-1);
+
+  const [diffPosition, setDiffPosition] = createSignal(0);
+  const [getInitialNote, setInitialNote] = createSignal<Note>();
+
   const snapValueToGridIfEnabled = (value: number, altKey: boolean) =>
     context.snapToGrid && !altKey
       ? Math.round(value / gridDivisionTicks()) * gridDivisionTicks()
       : value;
 
-  const insertOrUpdateNote = (event: MouseEvent) => {
-    const position = horizontalViewPort().calculatePosition(event.clientX);
-
-    const existingNote = currentNote();
-
-    const midi =
-      context.mode === "keys"
-        ? 127 - Math.floor(verticalViewPort().calculatePosition(event.clientY))
-        : existingNote?.midi ?? 60;
-
+  const calculateNoteDragValues = (event: MouseEvent) => {
     const targetTrackIndex =
       context.mode === "tracks"
         ? clamp(
@@ -38,35 +38,81 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
             0,
             context.tracks.length - 1,
           )
-        : context.selectedTrackIndex ?? 0;
+        : currentNoteTrackIndex() > -1
+        ? currentNoteTrackIndex()
+        : context.selectedTrackIndex;
 
-    const eventPositionTicks = Math.floor(position / gridDivisionTicks()) * gridDivisionTicks();
-    const velocity = 127;
+    const midi =
+      context.mode === "keys"
+        ? Math.floor(128 - verticalViewPort().calculatePosition(event.clientY))
+        : getInitialNote()?.midi ?? 60;
 
-    const ticks = existingNote?.ticks ?? eventPositionTicks;
-    const durationTicks = existingNote?.ticks
-      ? eventPositionTicks - existingNote?.ticks
-      : gridDivisionTicks();
+    const horiontalPosition = horizontalViewPort().calculatePosition(event.clientX);
 
-    const note = { midi, ticks, durationTicks, velocity };
+    return {
+      targetTrackIndex,
+      midi,
+      horiontalPosition,
+    };
+  };
 
-    if (existingNote) {
-      context.onNoteChange?.(currentNoteTrackIndex(), currentNoteIndex(), note);
-      return currentNoteIndex();
+  const handleMouseMove = (mouseMoveEvent: MouseEvent) => {
+    const note = getInitialNote();
+    if (!note) return;
+
+    const { targetTrackIndex, midi, horiontalPosition } = calculateNoteDragValues(mouseMoveEvent);
+
+    const ticks = snapValueToGridIfEnabled(
+      horiontalPosition - diffPosition(),
+      mouseMoveEvent.altKey,
+    );
+
+    const updatedNote = {
+      ...note,
+      midi,
+      ...(noteDragMode() === "move" && { ticks }),
+      ...(noteDragMode() === "trimStart" && {
+        ticks: ticks < note.ticks + note.durationTicks ? ticks : note.ticks + note.durationTicks,
+        durationTicks:
+          ticks < note.ticks + note.durationTicks
+            ? note.ticks + note.durationTicks - ticks
+            : snapValueToGridIfEnabled(horiontalPosition - note.ticks, mouseMoveEvent.altKey),
+      }),
+      ...(noteDragMode() === "trimEnd" && {
+        ticks: ticks < note.ticks ? ticks : note.ticks,
+        durationTicks:
+          ticks < note.ticks
+            ? note.ticks - ticks
+            : snapValueToGridIfEnabled(horiontalPosition - note.ticks, mouseMoveEvent.altKey),
+      }),
+    };
+
+    const previousTrackIndex = currentNoteTrackIndex();
+    const previousNoteIndex = currentNoteIndex();
+
+    if (targetTrackIndex === previousTrackIndex) {
+      context.onNoteChange?.(previousTrackIndex, previousNoteIndex, updatedNote);
     } else {
-      return context.onInsertNote?.(targetTrackIndex, note) ?? -1;
+      if (context.onInsertNote) {
+        context.onRemoveNote?.(previousTrackIndex, previousNoteIndex);
+        const newNoteIndex = context.onInsertNote(targetTrackIndex, updatedNote);
+
+        setCurrentNoteTrackIndex(targetTrackIndex);
+        setCurrentNoteIndex(newNoteIndex);
+      }
     }
   };
 
-  const [isDragging, setIsDragging] = createSignal(false);
-  const [noteDragMode, setNoteDragMode] = createSignal<NoteDragMode>();
-  const [currentNoteIndex, setCurrentNoteIndex] = createSignal(-1);
-  const [currentNoteTrackIndex, setCurrentNoteTrackIndex] = createSignal(-1);
-  const [isMouseDown, setIsMouseDown] = createSignal(false);
+  const stopDragging = () => {
+    window.removeEventListener("mousemove", handleMouseMove);
+    window.removeEventListener("mouseup", stopDragging);
+    setIsDragging(false);
+  };
 
-  const currentNote = createMemo(
-    () => context.tracks[currentNoteTrackIndex()]?.notes[currentNoteIndex()],
-  );
+  const startDragging = () => {
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", stopDragging);
+  };
 
   const getClasses = (noteDragMode: NoteDragMode) => {
     return noteDragMode ? [styles.Note, styles[noteDragMode]] : [styles.Note];
@@ -76,42 +122,30 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
     <div
       classList={{ [styles.PianoRollNotes]: true }}
       ref={props.ref}
-      onMouseDown={(event) => {
-        batch(() => {
-          setIsMouseDown(true);
-          const index = insertOrUpdateNote(event);
+      onMouseDown={(mouseDownEvent) => {
+        const { targetTrackIndex, midi, horiontalPosition } =
+          calculateNoteDragValues(mouseDownEvent);
 
-          setCurrentNoteTrackIndex(context.selectedTrackIndex ?? 0);
-          setCurrentNoteIndex(index);
-        });
-      }}
-      onMouseMove={(event) => {
-        if (isDragging()) return;
+        const ticks = snapValueToGridIfEnabled(horiontalPosition, mouseDownEvent.altKey);
+        const durationTicks = gridDivisionTicks();
 
-        if (!isMouseDown()) {
-          setNoteDragMode(undefined);
-          return;
-        }
+        const newNote: Note = {
+          midi,
+          ticks,
+          durationTicks,
+          velocity: 100,
+        };
 
-        const index = insertOrUpdateNote(event);
+        const newNoteIndex = context.onInsertNote(targetTrackIndex, newNote);
 
-        setCurrentNoteIndex(index);
-      }}
-      onMouseUp={(event) => {
-        setIsMouseDown(false);
-        if (!event.altKey) return;
-        insertOrUpdateNote(event);
-      }}
-      onDblClick={(event) => {
-        insertOrUpdateNote(event);
-      }}
-      onClick={(event) => {
-        if (currentNote()) {
-          setCurrentNoteIndex(-1);
-          return;
-        }
-        if (!event.altKey) return;
-        insertOrUpdateNote(event);
+        setIsDragging(true);
+        setCurrentNoteTrackIndex(targetTrackIndex);
+        setCurrentNoteIndex(newNoteIndex);
+        setInitialNote(newNote);
+        setDiffPosition(0);
+        setNoteDragMode("trimEnd");
+
+        startDragging();
       }}
     >
       <For each={context.tracks}>
@@ -174,98 +208,21 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
                         onMouseDown={(event) => {
                           event.stopPropagation();
 
-                          setIsDragging(true);
-
-                          setCurrentNoteIndex(noteIndex());
-                          setCurrentNoteTrackIndex(trackIndex());
-
                           const initialPosition = horizontalViewPort().calculatePosition(
                             event.clientX,
                           );
-                          const diffPosition = initialPosition - note.ticks;
 
-                          const handleMouseMove = (mouseMoveEvent: MouseEvent) => {
-                            const note = currentNote();
-                            if (!note) return;
+                          setDiffPosition(
+                            noteDragMode() === "trimEnd"
+                              ? -(note.ticks + note.durationTicks - initialPosition)
+                              : initialPosition - note.ticks,
+                          );
+                          setIsDragging(true);
+                          setCurrentNoteIndex(noteIndex());
+                          setCurrentNoteTrackIndex(trackIndex());
+                          setInitialNote(note);
 
-                            const ticks = snapValueToGridIfEnabled(
-                              Math.max(
-                                horizontalViewPort().calculatePosition(mouseMoveEvent.clientX) -
-                                  diffPosition,
-                                0,
-                              ),
-                              mouseMoveEvent.altKey,
-                            );
-
-                            const updatedNote = {
-                              ...note,
-                              ...(noteDragMode() === "move" &&
-                                context.mode === "keys" && {
-                                  midi: Math.round(
-                                    127 -
-                                      verticalViewPort().calculatePosition(mouseMoveEvent.clientY),
-                                  ),
-                                }),
-                              ...((noteDragMode() === "move" || noteDragMode() === "trimStart") && {
-                                ticks,
-                              }),
-                              ...(noteDragMode() === "trimStart" && {
-                                durationTicks: note.durationTicks + note.ticks - ticks,
-                              }),
-                              ...(noteDragMode() === "trimEnd" && {
-                                durationTicks: snapValueToGridIfEnabled(
-                                  horizontalViewPort().calculatePosition(mouseMoveEvent.clientX) -
-                                    note.ticks,
-                                  mouseMoveEvent.altKey,
-                                ),
-                              }),
-                            };
-
-                            const previousTrackIndex = currentNoteTrackIndex();
-                            const previousNoteIndex = currentNoteIndex();
-
-                            const targetTrackIndex =
-                              context.mode === "tracks"
-                                ? clamp(
-                                    Math.floor(
-                                      verticalViewPort().calculatePosition(mouseMoveEvent.clientY),
-                                    ),
-                                    0,
-                                    context.tracks.length - 1,
-                                  )
-                                : previousTrackIndex;
-
-                            if (targetTrackIndex === previousTrackIndex) {
-                              context.onNoteChange?.(
-                                previousTrackIndex,
-                                previousNoteIndex,
-                                updatedNote,
-                              );
-                            } else {
-                              batch(() => {
-                                if (context.onInsertNote) {
-                                  context.onRemoveNote?.(previousTrackIndex, previousNoteIndex);
-                                  const newNoteIndex = context.onInsertNote(
-                                    targetTrackIndex,
-                                    updatedNote,
-                                  );
-
-                                  setCurrentNoteTrackIndex(targetTrackIndex);
-                                  setCurrentNoteIndex(newNoteIndex);
-                                }
-                              });
-                            }
-                          };
-                          const handleMouseUp = () => {
-                            setIsDragging(false);
-                            setCurrentNoteIndex(-1);
-                            setCurrentNoteTrackIndex(-1);
-
-                            window.removeEventListener("mousemove", handleMouseMove);
-                            window.removeEventListener("mouseup", handleMouseUp);
-                          };
-                          window.addEventListener("mousemove", handleMouseMove);
-                          window.addEventListener("mouseup", handleMouseUp);
+                          startDragging();
                         }}
                         style={{
                           "background-color": `rgba(255,0,0, ${(128 + note.velocity) / 256})`,

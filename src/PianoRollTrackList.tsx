@@ -1,4 +1,4 @@
-import styles from "./PianoRollTrackList.module.css";
+import styles from "./PianoRollTrackList.module.scss";
 import { createMemo, Index, Show } from "solid-js";
 import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
 import { usePianoRollContext } from "./PianoRollContext";
@@ -18,13 +18,12 @@ const PianoRollTrackList = () => {
               <div
                 classList={{
                   [styles["Track"]]: true,
+                  [styles["selected"]]: index === context.selectedTrackIndex,
                 }}
                 title={track().name}
                 style={{
                   top: `${virtualDimensions().offset}px`,
                   height: `${virtualDimensions().size}px`,
-                  background: index === context.selectedTrackIndex ? "gray" : "lightgrey",
-                  cursor: "pointer",
                 }}
                 onClick={() => context.onSelectedTrackIndexChange?.(index)}
               >

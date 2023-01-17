@@ -22,6 +22,7 @@ const Demo: Component = () => {
 
   const [playHeadPosition, setPlayHeadPosition] = createSignal(0);
   const [isPlaying, setIsPlaying] = createSignal(false);
+  const [syncToPlayHead, setSyncToPlayHead] = createSignal(false);
 
   const [parsedMidi] = createResource(url, async (url) => {
     const midi = await Midi.fromUrl(url);
@@ -211,7 +212,7 @@ const Demo: Component = () => {
           showTrackList
         >
           <PlayHead
-            sync
+            sync={syncToPlayHead()}
             position={playHeadPosition()}
             style={{ "z-index": 3 }}
             onPositionChange={(newPosition) => {
@@ -261,6 +262,14 @@ const Demo: Component = () => {
               onChange={() => pianoRollState.onSnapToGridChange(!pianoRollState.snapToGrid)}
             />
             Snap to grid
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={syncToPlayHead()}
+              onChange={() => setSyncToPlayHead(!syncToPlayHead())}
+            />
+            Sync to playback position
           </label>
         </div>
       </div>

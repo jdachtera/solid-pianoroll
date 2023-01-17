@@ -87,7 +87,7 @@ const PianoRoll = (allProps: ParentProps<PianoRollProps>) => {
         >
           <div class={styles.PianoRollContainer}>
             <ZoomSliderControl orientation="vertical" dimensionName="verticalTracks" />
-            <div style={{ display: "flex", width: "30%", "max-width": "250px" }}>
+            <div class={styles.PianoRollLeftColumn}>
               <Show when={context.showTrackList}>
                 <ScrollZoomContainer
                   ref={setTracksScrollerRef}

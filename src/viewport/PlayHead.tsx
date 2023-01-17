@@ -1,18 +1,24 @@
-import { createEffect, createMemo, JSX, mergeProps, splitProps } from "solid-js";
-import { clamp } from "./viewport/createViewPortDimension";
-import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
+import { createEffect, createMemo, JSX, splitProps } from "solid-js";
+import { clamp } from "./createViewPortDimension";
+import { useViewPortDimension } from "./ScrollZoomViewPort";
 
 const PlayHead = (
   allProps: {
     position: number;
     onPositionChange?: (playHeadPosition: number) => void;
     sync?: boolean;
+    dimensionName?: string;
   } & JSX.IntrinsicElements["div"],
 ) => {
-  const propsWithDefauls = mergeProps(allProps);
-  const [props, divProps] = splitProps(propsWithDefauls, ["position", "sync", "onPositionChange"]);
+  const [props, divProps] = splitProps(allProps, [
+    "position",
+    "sync",
+    "onPositionChange",
+    "dimensionName",
+  ]);
 
-  const viewPort = useViewPortDimension("horizontal");
+  const viewPort = useViewPortDimension(props.dimensionName ?? "horizontal");
+
   createEffect(() => {
     if (!props.sync) return;
 

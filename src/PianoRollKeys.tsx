@@ -28,7 +28,7 @@ const PianoRollKeys = () => {
         <Index each={keys}>
           {(key) => {
             const isDown = createMemo(() =>
-              context.pressedKeys[context.selectedTrackIndex]?.includes(key().number),
+              context.isKeyDown(context.selectedTrackIndex, key().number),
             );
             const virtualDimensions = createMemo(() =>
               verticalViewPort().calculatePixelDimensions(127 - key().number, 1),
@@ -68,7 +68,7 @@ const PianoRollKeys = () => {
                   style={{
                     top: `${
                       virtualDimensions().offset -
-                      (!key().isBlack && nextIsBlack ? virtualDimensions().size / 2 : 0)
+                      virtualDimensions().size * (!key().isBlack ? (nextIsBlack ? 1 / 2 : 0) : 0)
                     }px`,
                     height: `${
                       virtualDimensions().size +

@@ -1,5 +1,5 @@
 import PianoRoll from "./PianoRoll";
-import PlayHead from "./PlayHead";
+import PlayHead from "./viewport/PlayHead";
 import useNotes from "./useNotes";
 import createPianoRollstate from "./usePianoRollState";
 
