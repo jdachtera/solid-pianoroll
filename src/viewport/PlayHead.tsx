@@ -5,7 +5,7 @@ import { useViewPortDimension } from "./ScrollZoomViewPort";
 const PlayHead = (
   allProps: {
     position: number;
-    onPositionChange?: (playHeadPosition: number) => void;
+    onPositionChange?: (playHeadPosition: number, event: MouseEvent) => void;
     sync?: boolean;
     dimensionName?: string;
   } & JSX.IntrinsicElements["div"],
@@ -46,9 +46,9 @@ const PlayHead = (
       onMouseDown={(event) => {
         event.preventDefault();
         event.stopPropagation();
-        const handleMouseMove = ({ clientX }: MouseEvent) => {
-          const newPosition = viewPort.calculatePosition(clientX);
-          props.onPositionChange?.(newPosition);
+        const handleMouseMove = (event: MouseEvent) => {
+          const newPosition = viewPort.calculatePosition(event.clientX);
+          props.onPositionChange?.(newPosition, event);
         };
         const handleMouseUp = () => {
           window.removeEventListener("mousemove", handleMouseMove);

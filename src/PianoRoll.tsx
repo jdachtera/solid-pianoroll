@@ -42,6 +42,7 @@ const PianoRoll = (allProps: ParentProps<PianoRollProps>) => {
                 <div
                   style={{
                     height: "30px",
+                    "border-right": "1px black solid",
                   }}
                 >
                   <button
@@ -72,24 +73,27 @@ const PianoRoll = (allProps: ParentProps<PianoRollProps>) => {
               </div>
             </div>
 
-            <div
-              style={{
-                width: "100%",
-                display: "flex",
-                height: "100%",
-                "flex-direction": "column",
-                overflow: "hidden",
-              }}
-            >
-              <div style={{ height: "30px" }}>
-                <PianoRollScale />
+            <PianoRollNotesScroller>
+              {allProps.children}
+              <div
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  height: "100%",
+                  "flex-direction": "column",
+                  overflow: "hidden",
+                }}
+              >
+                <div style={{ height: "30px" }}>
+                  <PianoRollScale />
+                </div>
+
+                <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+                  <PianoRollGrid />
+                  <PianoRollNotes />
+                </div>
               </div>
-              <PianoRollNotesScroller>
-                {allProps.children}
-                <PianoRollGrid />
-                <PianoRollNotes />
-              </PianoRollNotesScroller>
-            </div>
+            </PianoRollNotesScroller>
 
             <ZoomSliderControl orientation="vertical" disabled={context.mode !== "keys"} />
           </div>

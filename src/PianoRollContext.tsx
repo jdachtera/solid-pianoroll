@@ -3,12 +3,12 @@ import { createContext, splitProps, useContext } from "solid-js";
 import { PianoRollProps } from "./PianoRoll";
 import createPianoRollstate, { pianoRollStatePropNames } from "./usePianoRollState";
 
-const PianoRollContext = createContext<
-  {
-    showAllTracks?: boolean;
-    showTrackList?: boolean;
-  } & ReturnType<typeof createPianoRollstate>
->();
+export type PianoRollContext = {
+  showAllTracks?: boolean;
+  showTrackList?: boolean;
+} & ReturnType<typeof createPianoRollstate>;
+
+const PianoRollContext = createContext<PianoRollContext>();
 
 export const PianoRollContextProvider = PianoRollContext.Provider;
 

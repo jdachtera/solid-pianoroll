@@ -20,7 +20,6 @@ const Demo: Component = () => {
   const [url, setUrl] = createSignal("./examples_bach_846.mid");
   const [inputUrl, setInputUrl] = createSignal(untrack(() => url()));
 
-  const [playHeadPosition, setPlayHeadPosition] = createSignal(0);
   const [isPlaying, setIsPlaying] = createSignal(false);
   const [syncToPlayHead, setSyncToPlayHead] = createSignal(false);
   const [showTrackList, setShowTrackList] = createSignal(true);
@@ -30,7 +29,14 @@ const Demo: Component = () => {
     return midi.toJSON();
   });
 
-  const pianoRollState = createPianoRollstate();
+  const pianoRollState = createPianoRollstate({
+    onPlayHeadPositionChange: (value, originalEvent) => {
+      if (originalEvent) {
+        const seconds = Time(value, "i").toSeconds();
+        transport.seconds = seconds;
+      }
+    },
+  });
 
   const onNoteDown = (trackIndex: number, keyNumber: number) => {
     pianoRollState.onNoteDown(trackIndex, keyNumber);
@@ -81,7 +87,12 @@ const Demo: Component = () => {
     transport.PPQ = midi.header.ppq ?? transport.PPQ;
     transport.bpm.value = midi.header.tempos[0]?.bpm ?? transport.bpm.value;
     pianoRollState.onPpqChange(midi.header.ppq);
-    pianoRollState.onTracksChange(midi.tracks ?? []);
+    pianoRollState.onTracksChange(
+      [...(midi.tracks ?? [])].map((track, index) => ({
+        ...track,
+        color: stringToColor(track.name + index),
+      })),
+    );
   });
 
   const numberOfTracks = createMemo(() => pianoRollState.tracks.length);
@@ -154,8 +165,13 @@ const Demo: Component = () => {
 
   let animationFrame: number | undefined;
 
+  let previousPlayheadPosition = 0;
+
   const updatePlayHeadPosition = () => {
-    setPlayHeadPosition(TransportTime(transport.seconds).toTicks());
+    if (pianoRollState.playHeadPosition === previousPlayheadPosition) {
+      pianoRollState.onPlayHeadPositionChange(TransportTime(transport.seconds).toTicks());
+    }
+    previousPlayheadPosition = pianoRollState.playHeadPosition;
     animationFrame = requestAnimationFrame(updatePlayHeadPosition);
   };
 
@@ -208,13 +224,10 @@ const Demo: Component = () => {
           showTrackList={showTrackList()}
         >
           <PlayHead
-            sync={syncToPlayHead()}
-            position={playHeadPosition()}
             style={{ "z-index": 3 }}
-            onPositionChange={(newPosition) => {
-              transport.seconds = Time(newPosition, "i").toSeconds();
-              setPlayHeadPosition(newPosition);
-            }}
+            sync={syncToPlayHead()}
+            position={pianoRollState.playHeadPosition}
+            onPositionChange={pianoRollState.onPlayHeadPositionChange}
           />
         </PianoRoll>
       </div>
@@ -279,6 +292,19 @@ const Demo: Component = () => {
       </div>
     </div>
   );
+};
+
+const stringToColor = function (str: string) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  let colour = "#";
+  for (let i = 0; i < 3; i++) {
+    const value = (hash >> (i * 8)) & 0xff;
+    colour += ("00" + value.toString(16)).substr(-2);
+  }
+  return colour;
 };
 
 export default Demo;

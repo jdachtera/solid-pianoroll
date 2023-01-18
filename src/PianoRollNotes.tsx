@@ -25,11 +25,6 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
   const [diffPosition, setDiffPosition] = createSignal(0);
   const [getInitialNote, setInitialNote] = createSignal<Note>();
 
-  const snapValueToGridIfEnabled = (value: number, altKey: boolean) =>
-    context.snapToGrid && !altKey
-      ? Math.round(value / gridDivisionTicks()) * gridDivisionTicks()
-      : value;
-
   const calculateNoteDragValues = (event: MouseEvent) => {
     const targetTrackIndex =
       context.mode === "tracks"
@@ -65,7 +60,7 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
 
     const { targetTrackIndex, midi, horiontalPosition } = calculateNoteDragValues(mouseMoveEvent);
 
-    const ticks = snapValueToGridIfEnabled(
+    const ticks = context.snapValueToGridIfEnabled(
       horiontalPosition - diffPosition(),
       mouseMoveEvent.altKey,
     );
@@ -79,14 +74,20 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
         durationTicks:
           ticks < note.ticks + note.durationTicks
             ? note.ticks + note.durationTicks - ticks
-            : snapValueToGridIfEnabled(horiontalPosition - note.ticks, mouseMoveEvent.altKey),
+            : context.snapValueToGridIfEnabled(
+                horiontalPosition - note.ticks,
+                mouseMoveEvent.altKey,
+              ),
       }),
       ...(noteDragMode() === "trimEnd" && {
         ticks: ticks < note.ticks ? ticks : note.ticks,
         durationTicks:
           ticks < note.ticks
             ? note.ticks - ticks
-            : snapValueToGridIfEnabled(horiontalPosition - note.ticks, mouseMoveEvent.altKey),
+            : context.snapValueToGridIfEnabled(
+                horiontalPosition - note.ticks,
+                mouseMoveEvent.altKey,
+              ),
       }),
     };
 
@@ -134,7 +135,12 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
         const { targetTrackIndex, midi, horiontalPosition } =
           calculateNoteDragValues(mouseDownEvent);
 
-        const ticks = snapValueToGridIfEnabled(horiontalPosition, mouseDownEvent.altKey);
+        const ticks = context.snapValueToGridIfEnabled(
+          horiontalPosition,
+          mouseDownEvent.altKey,
+          context,
+        );
+
         const durationTicks = gridDivisionTicks();
 
         const newNote: Note = {
@@ -233,7 +239,9 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
                           startDragging();
                         }}
                         style={{
-                          "background-color": `rgba(255,0,0, ${(128 + note.velocity) / 256})`,
+                          "background-color": `${track.color}`,
+
+                          opacity: (note.velocity / 128 + 2) / 3,
 
                           top: `${verticalVirtualDimensions().offset}px`,
                           height: `${verticalVirtualDimensions().size}px`,

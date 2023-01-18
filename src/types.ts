@@ -8,4 +8,5 @@ export type Note = Pick<
 export type Track = {
   name: string;
   notes: Note[];
+  color: string;
 };
