@@ -48,7 +48,7 @@ type PropNameToHandlerName<PropName extends string> = `on${Capitalize<PropName>}
 
 type StateChangeHandlerObject = {
   [PropName in keyof typeof defaultState as PropNameToHandlerName<PropName>]: (
-    value: typeof defaultState[PropName],
+    value: (typeof defaultState)[PropName],
     originalEvent?: MouseEvent | KeyboardEvent,
   ) => void;
 };
@@ -77,12 +77,14 @@ const createPianoRollstate = (
 
   const handlers = Object.fromEntries(
     (Object.entries(state) as Entries<typeof state>).map((entry) => {
-      const handlerName = propNameToHandlerName(entry[0]) as PropNameToHandlerName<typeof entry[0]>;
+      const handlerName = propNameToHandlerName(entry[0]) as PropNameToHandlerName<
+        (typeof entry)[0]
+      >;
       return [
         handlerName,
-        (value: typeof entry[1], originalEvent?: MouseEvent | KeyboardEvent) => {
+        (value: (typeof entry)[1], originalEvent?: MouseEvent | KeyboardEvent) => {
           const handler = initialState?.[handlerName] as
-            | ((value: typeof entry[1], originalEvent?: MouseEvent | KeyboardEvent) => void)
+            | ((value: (typeof entry)[1], originalEvent?: MouseEvent | KeyboardEvent) => void)
             | undefined;
 
           setState(entry[0], value);
