@@ -18,29 +18,41 @@
   "files": [
     "dist"
   ],
-  "main": "dist/cjs/index.js",
-  "module": "dist/esm/index.js",
-  "types": "dist/types/index.d.ts",
+  "packageManager": "pnpm@7.22.0",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "browser": {},
   "exports": {
-    ".": {
-      "solid": "./dist/source/index.jsx",
-      "import": "./dist/esm/index.js",
-      "browser": {
-        "import": "./dist/esm/index.js",
-        "require": "./dist/cjs/index.js"
+    "solid": {
+      "development": "./dist/dev.jsx",
+      "import": "./dist/index.jsx"
+    },
+    "development": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/dev.js"
       },
-      "require": "./dist/cjs/index.js",
-      "node": "./dist/cjs/index.js"
-    }
+      "require": "./dist/dev.cjs"
+    },
+    "import": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "require": "./dist/index.cjs"
   },
+  "typesVersions": {},
   "scripts": {
     "dev": "vite serve dev",
     "build-dev": "vite build dev",
-    "test": "echo \"test not setup\"",
-    "build": "rollup -c && yarn build-dev",
-    "prepublishOnly": "yarn build",
-    "format": "prettier -w \"src/**/*.{js,ts,json,css,tsx,jsx}\" \"dev/**/*.{js,ts,json,css,tsx,jsx}\"",
-    "update-deps": "taze -w && yarn",
+    "test": "concurrently pnpm:test:*",
+    "build": "tsup",
+    "test:client": "vitest",
+    "test:ssr": "pnpm run test:client --mode ssr",
+    "prepublishOnly": "pnpm build",
+    "format": "prettier --ignore-path .gitignore -w \"src/**/*.{js,ts,json,css,tsx,jsx}\" \"dev/**/*.{js,ts,json,css,tsx,jsx}\"",
+    "update-deps": "pnpm up -Li",
     "typecheck": "tsc --noEmit"
   },
   "optionalDependencies": {
@@ -48,26 +60,23 @@
     "tone": "^14.7.77"
   },
   "peerDependencies": {
-    "solid-js": ">=1.0.0"
+    "solid-js": "^1.6.0"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.47.1",
-    "@typescript-eslint/parser": "^5.47.1",
-    "eslint": "^8.31.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "eslint-plugin-unused-imports": "^2.0.0",
-    "postcss": "^8.4.20",
-    "prettier": "2.8.1",
-    "rollup": "^3.7.2",
-    "rollup-plugin-postcss": "^4.0.2",
-    "rollup-preset-solid": "^2.0.1",
-    "solid-js": "^1.6.4",
-    "taze": "^0.8.4",
+    "sass": "^1.57.1",
+    "concurrently": "^7.6.0",
+    "esbuild": "^0.17.5",
+    "esbuild-plugin-solid": "^0.5.0",
+    "jsdom": "^21.1.0",
+    "prettier": "2.8.3",
+    "solid-js": "^1.6.9",
+    "tsup": "^6.5.0",
+    "tsup-preset-solid": "^0.1.5",
     "typescript": "^4.9.4",
     "typescript-plugin-css-modules": "^4.1.1",
-    "vite": "^4.0.0",
-    "vite-plugin-solid": "^2.5.0"
+    "vite": "^4.0.4",
+    "vite-plugin-solid": "^2.5.0",
+    "vitest": "^0.28.3"
   },
   "keywords": [
     "solid"

@@ -6,3 +6,6 @@ gitignore
 
 # VSC Settings
 .vscode/settings.json
+
+# tsup
+tsup.config.bundled_*.{m,c,}s

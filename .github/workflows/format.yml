@@ -2,8 +2,7 @@ name: Format
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   format:
@@ -11,20 +10,20 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2.2.4
 
       - name: Setup Node.js environment
         uses: actions/setup-node@v3
         with:
-          node-version: 16
-          cache: "yarn"
+          node-version: 18
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: pnpm install
 
       - name: Format
-        run: yarn format
+        run: pnpm run format
 
       - name: Add, Commit and Push
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: "Format"
+          commit_message: 'Format'

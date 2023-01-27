@@ -16,8 +16,8 @@
   padding: 2px;
   cursor: pointer;
   background: lightgrey;
+}
 
-  &.selected {
-    background: gray;
-  }
+Track.selected {
+  background: gray;
 }

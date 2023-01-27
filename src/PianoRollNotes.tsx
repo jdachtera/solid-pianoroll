@@ -1,7 +1,7 @@
 import { createMemo, createSignal, For, Ref, Show } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
 import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
-import styles from "./PianoRollNotes.module.scss";
+import styles from "./PianoRollNotes.module.css";
 import { clamp } from "./viewport/createViewPortDimension";
 import { Note } from "./types";
 

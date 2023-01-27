@@ -1,0 +1,28 @@
+.PianoRollNotes {
+  position: absolute;
+  flex: 1;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  cursor: grab;
+}
+
+.Note {
+  position: absolute;
+  box-sizing: border-box;
+  border-width: 0.5px;
+  border-style: solid;
+  border-color: #a00;
+
+  cursor: move;
+}
+
+.Note.trimStart {
+  cursor: w-resize;
+}
+
+.Note.trimEnd {
+  cursor: e-resize;
+}

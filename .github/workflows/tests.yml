@@ -1,38 +1,39 @@
 name: Build and Test
 
-on: [push]
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   build:
-    runs-on: ${{ matrix.operating-system }}
-
-    strategy:
-      matrix:
-        node-version: [16.x, 18.x]
-        operating-system: [ubuntu-latest]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
-      - name: Setup Node.js environment ${{ matrix.node-version }}
+      - uses: pnpm/action-setup@v2.2.4
+
+      - name: Setup Node.js environment
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: yarn
+          node-version: 18
+          cache: pnpm
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: pnpm install
 
       - name: Build
-        run: yarn build
+        run: pnpm run build
 
       - name: Test
-        run: yarn test
+        run: pnpm run test
         env:
           CI: true
 
       - name: Typecheck
-        run: yarn typecheck
+        run: pnpm run typecheck

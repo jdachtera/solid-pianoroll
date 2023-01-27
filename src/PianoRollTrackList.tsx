@@ -1,4 +1,4 @@
-import styles from "./PianoRollTrackList.module.scss";
+import styles from "./PianoRollTrackList.module.css";
 import { createMemo, Index, Show } from "solid-js";
 import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
 import { usePianoRollContext } from "./PianoRollContext";
