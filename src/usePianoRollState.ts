@@ -1,6 +1,6 @@
 import { mergeProps } from "solid-js";
 import { createStore } from "solid-js/store";
-import { GridDivision } from "./PianoRoll";
+import { GridDivision } from "./types";
 import { Note, Track } from "./types";
 import { ClientRect } from "./useBoundingClientRect";
 

@@ -14,8 +14,6 @@ import PianoRollNotesScroller from "./PianoRollNotesScroller";
 import PianoRollTrackListScroller from "./PianoRollTrackListScroller";
 import PianoRollScale from "./PianoRollScale";
 
-export type GridDivision = 1 | 2 | 4 | 8 | 16 | 32 | 64;
-
 export type PianoRollProps = {
   showAllTracks?: boolean;
   showTrackList?: boolean;

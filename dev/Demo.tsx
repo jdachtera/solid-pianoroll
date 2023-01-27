@@ -9,12 +9,10 @@ import {
   mapArray,
   untrack,
 } from "solid-js";
-import { PianoRoll, PlayHead, createPianoRollstate } from "../src";
-import { GridDivision } from "src/PianoRoll";
+import { PianoRoll, PlayHead, createPianoRollstate, Note, GridDivision } from "../src";
 
 import styles from "./Demo.module.css";
 import { isNumber, Time, TransportTime } from "tone";
-import { Note } from "src/types";
 
 const Demo: Component = () => {
   const [url, setUrl] = createSignal("./examples_bach_846.mid");
