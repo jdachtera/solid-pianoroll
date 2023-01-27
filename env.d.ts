@@ -1,5 +1,3 @@
-declare module "*.module.css";
-
 declare global {
   interface ImportMeta {
     env: {
@@ -16,3 +14,4 @@ declare global {
     }
   }
 }
+export {};
