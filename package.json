@@ -1,5 +1,5 @@
 {
-  "version": "0.0.26",
+  "version": "0.0.27",
   "name": "solid-pianoroll",
   "description": "Pianoroll UI Control for Solid JS apps",
   "license": "MIT",
@@ -66,8 +66,8 @@
     "autoprefixer": "^10.4.13",
     "concurrently": "^7.6.0",
     "esbuild": "^0.17.5",
-    "esbuild-plugin-solid": "^0.5.0",
     "esbuild-css-modules-plugin": "^2.7.1",
+    "esbuild-plugin-solid": "^0.5.0",
     "jsdom": "^21.1.0",
     "prettier": "2.8.3",
     "sass": "^1.57.1",
