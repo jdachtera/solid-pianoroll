@@ -63,10 +63,13 @@
     "solid-js": "^1.6.0"
   },
   "devDependencies": {
+    "autoprefixer": "^10.4.13",
     "concurrently": "^7.6.0",
     "esbuild": "^0.17.5",
     "esbuild-plugin-solid": "^0.5.0",
     "jsdom": "^21.1.0",
+    "postcss": "^8.4.21",
+    "postcss-modules": "^6.0.0",
     "prettier": "2.8.3",
     "sass": "^1.57.1",
     "solid-js": "^1.6.9",
