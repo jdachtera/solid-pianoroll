@@ -15,6 +15,7 @@ export default defineConfig(
     esbuildPlugins: [
       esbuildCss({
         inject: true,
+        localsConvention: "camelCase",
       }) as unknown as NonNullable<GlobalOptions["esbuildPlugins"]>[number],
     ],
   },
