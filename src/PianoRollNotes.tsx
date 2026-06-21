@@ -164,7 +164,6 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
         const ticks = context.snapValueToGridIfEnabled(
           horiontalPosition,
           mouseDownEvent.altKey,
-          context,
         );
 
         const durationTicks = gridDivisionTicks();

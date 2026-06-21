@@ -39,7 +39,7 @@ const ScrollZoomContainer = (
     useViewPortDimension(propsWithDefaults.horizontalDimensionName),
   );
 
-  const handleScroll = (event: UIEvent & { currentTarget: Element }) => {
+  const handleScroll = (event: Event & { currentTarget: HTMLDivElement }) => {
     event.preventDefault();
 
     if (didUpdateScroll) {
