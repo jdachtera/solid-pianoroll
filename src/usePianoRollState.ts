@@ -17,6 +17,10 @@ type PianoRollState = {
   gridDivision: GridDivision;
   snapToGrid: boolean;
   duration: number;
+  // Loop/clip length in ticks. The timeline spans `duration` (which a consumer
+  // can make larger than the loop to leave room to drag), while the loop brace
+  // marks [0, loopEnd]. 0 means "no separate loop" → falls back to `duration`.
+  loopEnd: number;
   tracks: Track[];
   selectedTrackIndex: number;
   pressedKeys: Record<number, Record<number, boolean>>;
@@ -37,6 +41,7 @@ const defaultState: PianoRollState = {
   gridDivision: 4,
   snapToGrid: true,
   duration: 0,
+  loopEnd: 0,
   tracks: [],
   selectedTrackIndex: 0,
   pressedKeys: {},
