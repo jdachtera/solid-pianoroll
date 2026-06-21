@@ -2,6 +2,12 @@ import { ParentProps } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
 import { ScrollZoomViewPort } from "./viewport/ScrollZoomViewPort";
 
+// Height (px) of the time-ruler row above the notes (see PianoRoll.tsx). The
+// notes/grid start this far below the notes-scroller's top, so the vertical
+// hit-testing origin must be offset by it — otherwise clicks/drags map ~this
+// many pixels too high and notes land a few semitones below the cursor.
+export const PIANO_ROLL_SCALE_HEIGHT = 30;
+
 const PianoRollScrollZoomViewPort = (props: ParentProps) => {
   const zoomFactor = 500;
 
@@ -23,7 +29,7 @@ const PianoRollScrollZoomViewPort = (props: ParentProps) => {
           maxZoom: 500,
         }),
         vertical: () => ({
-          pixelOffset: context.notesScrollerClientRect.top,
+          pixelOffset: context.notesScrollerClientRect.top + PIANO_ROLL_SCALE_HEIGHT,
           pixelSize: context.notesScrollerClientRect.height,
           position: context.verticalPosition,
           range: 128,
