@@ -1,5 +1,5 @@
 {
-  "version": "0.0.28",
+  "version": "0.0.29",
   "name": "solid-pianoroll",
   "description": "Pianoroll UI Control for Solid JS apps",
   "license": "MIT",
@@ -18,7 +18,7 @@
   "files": [
     "dist"
   ],
-  "packageManager": "pnpm@7.22.0",
+  "packageManager": "pnpm@9.15.9",
   "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -48,6 +48,7 @@
     "build-dev": "vite build dev",
     "test": "concurrently pnpm:test:*",
     "build": "tsup",
+    "prepare": "tsup",
     "test:client": "vitest",
     "test:ssr": "pnpm run test:client --mode ssr",
     "prepublishOnly": "pnpm build",
