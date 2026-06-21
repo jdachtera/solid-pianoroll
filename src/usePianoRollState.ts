@@ -19,8 +19,15 @@ type PianoRollState = {
   duration: number;
   // Loop/clip length in ticks. The timeline spans `duration` (which a consumer
   // can make larger than the loop to leave room to drag), while the loop brace
-  // marks [0, loopEnd]. 0 means "no separate loop" → falls back to `duration`.
+  // marks [loopStart, loopEnd]. 0 means "no separate loop" → falls back to
+  // `duration`.
   loopEnd: number;
+  // Where the loop begins (ticks). Defaults to 0 (loop from the clip start).
+  loopStart: number;
+  // Time signature. A bar is `beatsPerBar` beats, each a 1/`beatUnit` note, so
+  // a bar = beatsPerBar * ppq * 4 / beatUnit ticks. Defaults to 4/4.
+  beatsPerBar: number;
+  beatUnit: number;
   tracks: Track[];
   selectedTrackIndex: number;
   pressedKeys: Record<number, Record<number, boolean>>;
@@ -42,6 +49,9 @@ const defaultState: PianoRollState = {
   snapToGrid: true,
   duration: 0,
   loopEnd: 0,
+  loopStart: 0,
+  beatsPerBar: 4,
+  beatUnit: 4,
   tracks: [],
   selectedTrackIndex: 0,
   pressedKeys: {},

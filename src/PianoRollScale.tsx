@@ -14,44 +14,60 @@ const PianoRollScale = () => {
     context.onPlayHeadPositionChange(position, event);
   };
 
-  // --- Loop-length brace -----------------------------------------------------
-  // An Ableton-style bracket over the ruler marking the loop [0, loopEnd]. Drag
-  // its right edge to set the clip length; it snaps to the bar and commits once
-  // on release (consumers typically pass a `duration` a bit larger than the loop
-  // so there's room to drag past the current end). Only shown when the consumer
-  // opts in by providing a non-zero `loopEnd`.
+  // --- Loop brace ------------------------------------------------------------
+  // An Ableton-style bracket over the ruler marking the loop [loopStart, loopEnd].
+  // Drag either edge to set the loop start / clip length; edges snap to the bar
+  // (honouring the time signature) and commit once on release. Consumers
+  // typically pass a `duration` a bit larger than the loop so the right edge has
+  // room to drag past the current end. Only shown when the consumer opts in by
+  // providing a non-zero `loopEnd`.
+  const [dragLoopStart, setDragLoopStart] = createSignal<number>();
   const [dragLoopEnd, setDragLoopEnd] = createSignal<number>();
 
-  const barTicks = () => (context.ppq || 192) * 4;
-  const snapToBar = (ticks: number) =>
-    Math.max(barTicks(), Math.round(ticks / barTicks()) * barTicks());
+  const barTicks = () =>
+    (context.beatsPerBar * (context.ppq || 192) * 4) / (context.beatUnit || 4) ||
+    (context.ppq || 192) * 4;
+  const snapToBar = (ticks: number) => Math.max(0, Math.round(ticks / barTicks()) * barTicks());
 
+  const loopStart = () => dragLoopStart() ?? context.loopStart;
   const loopEnd = () => dragLoopEnd() ?? context.loopEnd;
   const braceDimensions = createMemo(() =>
-    horizontalViewPort().calculatePixelDimensions(0, loopEnd()),
+    horizontalViewPort().calculatePixelDimensions(loopStart(), loopEnd() - loopStart()),
   );
 
-  const handleResize = (event: MouseEvent) => {
-    const position = horizontalViewPort().calculatePosition(event.clientX);
-    // Snap to the bar and keep the handle within the visible timeline.
-    setDragLoopEnd(Math.min(snapToBar(position), context.duration || Infinity));
-  };
-
-  const startResize = (event: MouseEvent) => {
+  const startDrag = (edge: "start" | "end") => (event: MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    setDragLoopEnd(context.loopEnd);
+    if (edge === "start") setDragLoopStart(context.loopStart);
+    else setDragLoopEnd(context.loopEnd);
 
-    const stop = () => {
-      window.removeEventListener("mousemove", handleResize);
-      window.removeEventListener("mouseup", stop);
-      const value = dragLoopEnd();
-      setDragLoopEnd(undefined);
-      if (value != null) context.onLoopEndChange?.(value);
+    const onMove = (moveEvent: MouseEvent) => {
+      const position = snapToBar(horizontalViewPort().calculatePosition(moveEvent.clientX));
+      if (edge === "start") {
+        // Keep at least one bar of loop, and don't go before the clip start.
+        setDragLoopStart(Math.max(0, Math.min(position, loopEnd() - barTicks())));
+      } else {
+        // At least one bar long, and within the visible timeline.
+        setDragLoopEnd(
+          Math.min(Math.max(position, loopStart() + barTicks()), context.duration || Infinity),
+        );
+      }
     };
-
-    window.addEventListener("mousemove", handleResize);
-    window.addEventListener("mouseup", stop);
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      if (edge === "start") {
+        const value = dragLoopStart();
+        setDragLoopStart(undefined);
+        if (value != null) context.onLoopStartChange?.(value);
+      } else {
+        const value = dragLoopEnd();
+        setDragLoopEnd(undefined);
+        if (value != null) context.onLoopEndChange?.(value);
+      }
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
   };
 
   return (
@@ -94,7 +110,7 @@ const PianoRollScale = () => {
       </Index>
 
       <Show when={context.loopEnd > 0}>
-        {/* Loop region [0, loopEnd] — a top bar plus a marker line at the end. */}
+        {/* Loop region [loopStart, loopEnd] — a top bar plus edge marker lines. */}
         <div
           style={{
             position: "absolute",
@@ -103,6 +119,7 @@ const PianoRollScale = () => {
             width: `${braceDimensions().size}px`,
             height: "100%",
             "box-sizing": "border-box",
+            "border-left": "2px solid #ff9100",
             "border-right": "2px solid #ff9100",
             "pointer-events": "none",
             "z-index": "2",
@@ -119,10 +136,24 @@ const PianoRollScale = () => {
             }}
           />
         </div>
-        {/* Grab zone straddling the loop's right edge. */}
+        {/* Grab zone straddling the loop's left edge (loop start). */}
+        <div
+          title="Drag to set the loop start"
+          onMouseDown={startDrag("start")}
+          style={{
+            position: "absolute",
+            top: "0px",
+            left: `${braceDimensions().offset - 5}px`,
+            width: "11px",
+            height: "100%",
+            cursor: "ew-resize",
+            "z-index": "3",
+          }}
+        />
+        {/* Grab zone straddling the loop's right edge (clip length). */}
         <div
           title="Drag to set the clip length"
-          onMouseDown={startResize}
+          onMouseDown={startDrag("end")}
           style={{
             position: "absolute",
             top: "0px",

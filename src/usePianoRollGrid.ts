@@ -6,7 +6,12 @@ const usePianoRollGrid = () => {
   const context = usePianoRollContext();
 
   const horizontalViewPort = createMemo(() => useViewPortDimension("horizontal"));
-  const measureTicks = createMemo(() => context.ppq * 4);
+  // A bar's length honours the time signature: beatsPerBar beats, each a
+  // 1/beatUnit note (ppq is ticks per quarter). Falls back to 4/4.
+  const measureTicks = createMemo(
+    () =>
+      (context.beatsPerBar * context.ppq * 4) / (context.beatUnit || 4) || context.ppq * 4,
+  );
   const selectedGridDivisorTicks = createMemo(() => measureTicks() / context.gridDivision);
 
   function calculateVisibleGridDivisorTicks(value: number): number {
@@ -39,10 +44,10 @@ const usePianoRollGrid = () => {
       const index = i + startIndex;
       const ticks = index * gridDivisorTicks();
 
-      const measurePosition = ticks / context.ppq / 4 + 1;
+      const measurePosition = ticks / measureTicks() + 1;
 
       const bars = Math.floor(measurePosition);
-      const beats = Math.floor((measurePosition - bars) * 4);
+      const beats = Math.floor((measurePosition - bars) * (context.beatsPerBar || 4));
 
       const label = `${bars}${beats ? `.${beats}` : ""}`;
       return {

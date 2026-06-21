@@ -1,51 +1,35 @@
-import { createRoot, createSignal } from 'solid-js'
-import { isServer } from 'solid-js/web'
-import { describe, expect, it } from 'vitest'
-import { Hello, createHello } from '../src'
+import { createRoot } from "solid-js";
+import { describe, expect, it } from "vitest";
+import { createPianoRollstate } from "../src";
 
-describe('environment', () => {
-  it('runs on server', () => {
-    expect(typeof window).toBe('object')
-    expect(isServer).toBe(false)
-  })
-})
+describe("createPianoRollstate", () => {
+  it("applies defaults and overrides", () =>
+    createRoot((dispose) => {
+      const state = createPianoRollstate({ ppq: 96, duration: 768, beatsPerBar: 3, beatUnit: 4 });
+      expect(state.ppq).toBe(96);
+      expect(state.duration).toBe(768);
+      expect(state.beatsPerBar).toBe(3);
+      expect(state.loopStart).toBe(0);
+      dispose();
+    }));
 
-describe('createHello', () => {
-  it('Returns a Hello World signal', () =>
-    createRoot(dispose => {
-      const [hello] = createHello()
-      expect(hello()).toBe('Hello World!')
-      dispose()
-    }))
+  it("forwards loop changes to the consumer callbacks", () =>
+    createRoot((dispose) => {
+      let committedEnd: number | undefined;
+      let committedStart: number | undefined;
+      const state = createPianoRollstate({
+        loopEnd: 384,
+        onLoopEndChange: (value) => (committedEnd = value),
+        onLoopStartChange: (value) => (committedStart = value),
+      });
 
-  it('Changes the hello target', () =>
-    createRoot(dispose => {
-      const [hello, setHello] = createHello()
-      setHello('Solid')
-      expect(hello()).toBe('Hello Solid!')
-      dispose()
-    }))
-})
+      state.onLoopEndChange(768);
+      expect(committedEnd).toBe(768);
+      expect(state.loopEnd).toBe(768);
 
-describe('Hello', () => {
-  it('renders a hello component', () => {
-    createRoot(() => {
-      const container = (<Hello />) as HTMLDivElement
-      expect(container.outerHTML).toBe('<div>Hello World!</div>')
-    })
-  })
-
-  it('changes the hello target', () =>
-    createRoot(dispose => {
-      const [to, setTo] = createSignal('Solid')
-      const container = (<Hello to={to()} />) as HTMLDivElement
-      expect(container.outerHTML).toBe('<div>Hello Solid!</div>')
-      setTo('Tests')
-
-      // rendering is async
-      queueMicrotask(() => {
-        expect(container.outerHTML).toBe('<div>Hello Tests!</div>')
-        dispose()
-      })
-    }))
-})
+      state.onLoopStartChange(192);
+      expect(committedStart).toBe(192);
+      expect(state.loopStart).toBe(192);
+      dispose();
+    }));
+});
