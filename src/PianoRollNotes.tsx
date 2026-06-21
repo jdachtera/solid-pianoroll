@@ -25,11 +25,32 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
   const [diffPosition, setDiffPosition] = createSignal(0);
   const [getInitialNote, setInitialNote] = createSignal<Note>();
 
+  // The notes render below the time ruler (and the whole roll can be scrolled or
+  // shifted by layout), so the viewport's cached scroller offset didn't line up
+  // with where notes actually are — clicks/drags then landed off from the cursor
+  // (e.g. a few semitones low). Map client coordinates against this element's
+  // *live* bounding rect — the exact origin the notes are rendered from — so
+  // hit-testing always matches the visuals.
+  let rootElement: HTMLDivElement | undefined;
+
+  const positionFromClient = (
+    viewPort: ReturnType<typeof useViewPortDimension>,
+    clientCoord: number,
+    axis: "x" | "y",
+  ) => {
+    const rect = rootElement?.getBoundingClientRect();
+    const origin = axis === "x" ? rect?.left ?? 0 : rect?.top ?? 0;
+    const pixelsPerUnit = viewPort.calculatePixelValue(1);
+    return pixelsPerUnit
+      ? viewPort.position + (clientCoord - origin) / pixelsPerUnit
+      : viewPort.position;
+  };
+
   const calculateNoteDragValues = (event: MouseEvent) => {
     const targetTrackIndex =
       context.mode === "tracks"
         ? clamp(
-            Math.floor(verticalViewPort().calculatePosition(event.clientY)),
+            Math.floor(positionFromClient(verticalViewPort(), event.clientY, "y")),
             0,
             context.tracks.length - 1,
           )
@@ -39,10 +60,10 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
 
     const midi =
       context.mode === "keys"
-        ? Math.floor(128 - verticalViewPort().calculatePosition(event.clientY))
+        ? Math.floor(128 - positionFromClient(verticalViewPort(), event.clientY, "y"))
         : getInitialNote()?.midi ?? 60;
 
-    const horiontalPosition = horizontalViewPort().calculatePosition(event.clientX);
+    const horiontalPosition = positionFromClient(horizontalViewPort(), event.clientX, "x");
 
     return {
       targetTrackIndex,
@@ -127,7 +148,12 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
   return (
     <div
       classList={{ [styles.PianoRollNotes]: true }}
-      ref={props.ref}
+      ref={(element) => {
+        rootElement = element;
+        if (typeof props.ref === "function") {
+          (props.ref as (el: HTMLDivElement) => void)(element);
+        }
+      }}
       onMouseDown={(mouseDownEvent) => {
         mouseDownEvent.preventDefault();
         mouseDownEvent.stopPropagation();
@@ -200,7 +226,7 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
                           event.stopPropagation();
 
                           const relativeX = horizontalViewPort().calculatePixelValue(
-                            horizontalViewPort().calculatePosition(event.clientX),
+                            positionFromClient(horizontalViewPort(), event.clientX, "x"),
                           );
                           const noteStartX = horizontalViewPort().calculatePixelValue(note.ticks);
                           const noteEndX = horizontalViewPort().calculatePixelValue(
@@ -222,8 +248,10 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
                         onMouseDown={(event) => {
                           event.stopPropagation();
 
-                          const initialPosition = horizontalViewPort().calculatePosition(
+                          const initialPosition = positionFromClient(
+                            horizontalViewPort(),
                             event.clientX,
+                            "x",
                           );
 
                           setDiffPosition(
