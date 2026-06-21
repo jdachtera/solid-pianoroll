@@ -55,6 +55,13 @@ type StateChangeHandlerObject = {
 
 const propNameToHandlerName = (name: string) => `on${name[0]?.toUpperCase()}${name.slice(1)}Change`;
 
+// User-supplied action callbacks (not derived `on<Prop>Change` setters). These
+// are invoked *in addition to* the built-in state bookkeeping below.
+type PianoRollActionHandlers = {
+  onNoteDown: (trackIndex: number, keyNumber: number) => void;
+  onNoteUp: (trackIndex: number, keyNumber: number) => void;
+};
+
 export const pianoRollStatePropNames = [
   ...Object.keys(defaultState),
   ...Object.keys(defaultState).map(propNameToHandlerName),
@@ -68,7 +75,7 @@ export const pianoRollStatePropNames = [
 ] as (keyof ReturnType<typeof createPianoRollstate>)[];
 
 const createPianoRollstate = (
-  initialState?: Partial<PianoRollState & StateChangeHandlerObject>,
+  initialState?: Partial<PianoRollState & StateChangeHandlerObject & PianoRollActionHandlers>,
 ) => {
   const [state, setState] = createStore<PianoRollState>({
     ...defaultState,
@@ -166,10 +173,15 @@ const createPianoRollstate = (
 
   const onNoteDown = (trackIndex: number, keyNumber: number) => {
     updateKeyPressedState(trackIndex, keyNumber, true);
+    // Forward to the consumer's callback (e.g. to audition a synth/sampler).
+    // Previously this internal handler shadowed any user-supplied onNoteDown via
+    // mergeProps, so on-screen key presses lit up but never produced sound.
+    initialState?.onNoteDown?.(trackIndex, keyNumber);
   };
 
   const onNoteUp = (trackIndex: number, keyNumber: number) => {
     updateKeyPressedState(trackIndex, keyNumber, false);
+    initialState?.onNoteUp?.(trackIndex, keyNumber);
   };
 
   const isKeyDown = (trackIndex: number, keyNumber: number) =>
