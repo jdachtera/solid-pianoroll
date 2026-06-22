@@ -9,9 +9,17 @@
 
 .PianoRollContainer {
   overflow: hidden;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: row;
+}
+
+.PianoRollExpressionLaneContainer {
+  position: relative;
+  overflow: hidden;
+  flex: 0 0 110px;
+  margin-right: 24px;
 }
 
 .PianoRollLeftColumn {

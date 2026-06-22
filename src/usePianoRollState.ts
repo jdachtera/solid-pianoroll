@@ -43,6 +43,8 @@ type PianoRollState = {
   // Ids of the currently selected notes (across all tracks). Drives the
   // selected-note styling and is the target of the keyboard/lane actions.
   selectedNoteIds: string[];
+  // Which per-note field the expression lane edits.
+  expressionField: NoteExpressionField;
   pressedKeys: Record<number, Record<number, boolean>>;
   notesScrollerClientRect: Pick<ClientRect, "left" | "width" | "top" | "height">;
   tracksScrollerClientRect: Pick<ClientRect, "left" | "width" | "top" | "height">;
@@ -68,6 +70,7 @@ const defaultState: PianoRollState = {
   tracks: [],
   selectedTrackIndex: 0,
   selectedNoteIds: [],
+  expressionField: "velocity",
   pressedKeys: {},
   notesScrollerClientRect: { left: 0, width: 0, top: 0, height: 0 },
   tracksScrollerClientRect: { left: 0, width: 0, top: 0, height: 0 },

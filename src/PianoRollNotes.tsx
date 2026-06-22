@@ -1,4 +1,4 @@
-import { createMemo, createSignal, For, onCleanup, Ref, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, For, onCleanup, Ref, Show } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
 import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
 import styles from "./PianoRollNotes.module.css";
@@ -24,6 +24,24 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
   const horizontalViewPort = createMemo(() => useViewPortDimension("horizontal"));
 
   const gridDivisionTicks = createMemo(() => (context.ppq * 4) / context.gridDivision);
+
+  // Consumer-supplied notes (loaded MIDI, randomized patterns, …) often arrive
+  // without an id. Backfill ids so selection/multi-edit can track them. This is
+  // idempotent: once every note has an id the effect stops writing.
+  createEffect(() => {
+    let changed = false;
+    const next = context.tracks.map((track) => {
+      let trackChanged = false;
+      const notes = track.notes.map((note) => {
+        if (note.id) return note;
+        trackChanged = true;
+        changed = true;
+        return { ...note, id: createNoteId() };
+      });
+      return trackChanged ? { ...track, notes } : track;
+    });
+    if (changed) context.onTracksChange?.(next);
+  });
 
   const [isDragging, setIsDragging] = createSignal(false);
   const [noteDragMode, setNoteDragMode] = createSignal<NoteDragMode>();

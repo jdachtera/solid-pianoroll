@@ -1,8 +1,17 @@
 import PianoRoll from "./PianoRoll";
+import PianoRollExpressionLane, { expressionFieldConfig } from "./PianoRollExpressionLane";
 import PlayHead from "./viewport/PlayHead";
 import useNotes from "./useNotes";
-import createPianoRollstate from "./usePianoRollState";
+import createPianoRollstate, { createNoteId } from "./usePianoRollState";
 
-export type { Note, Track, GridDivision } from "./types";
+export type { Note, Track, GridDivision, NoteExpressionField } from "./types";
 
-export { PianoRoll, createPianoRollstate, useNotes, PlayHead };
+export {
+  PianoRoll,
+  PianoRollExpressionLane,
+  expressionFieldConfig,
+  createPianoRollstate,
+  createNoteId,
+  useNotes,
+  PlayHead,
+};

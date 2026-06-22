@@ -21,6 +21,7 @@ const Demo: Component = () => {
   const [isPlaying, setIsPlaying] = createSignal(false);
   const [syncToPlayHead, setSyncToPlayHead] = createSignal(false);
   const [showTrackList, setShowTrackList] = createSignal(true);
+  const [showExpressionLane, setShowExpressionLane] = createSignal(true);
 
   const [parsedMidi] = createResource(url, async (url) => {
     const midi = await Midi.fromUrl(url);
@@ -220,6 +221,7 @@ const Demo: Component = () => {
           onNoteChange={onNoteChange}
           onRemoveNote={onRemoveNote}
           showTrackList={showTrackList()}
+          showExpressionLane={showExpressionLane()}
         >
           <PlayHead
             style={{ "z-index": 3 }}
@@ -285,6 +287,14 @@ const Demo: Component = () => {
               onChange={() => setShowTrackList(!showTrackList())}
             />
             Show Track List
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={showExpressionLane()}
+              onChange={() => setShowExpressionLane(!showExpressionLane())}
+            />
+            Show Expression Lane
           </label>
         </div>
       </div>
