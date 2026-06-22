@@ -1,11 +1,19 @@
-import { createMemo, createSignal, For, Ref, Show } from "solid-js";
+import { createMemo, createSignal, For, onCleanup, Ref, Show } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
 import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
 import styles from "./PianoRollNotes.module.css";
 import { clamp } from "./viewport/createViewPortDimension";
+import { createNoteId } from "./usePianoRollState";
 import { Note } from "./types";
 
 type NoteDragMode = "trimStart" | "move" | "trimEnd" | undefined;
+
+// A marquee rectangle in *position space* (ticks horizontally, view rows
+// vertically — i.e. 127 - midi in keys mode, track index in tracks mode).
+type Marquee = { t0: number; t1: number; v0: number; v1: number };
+
+const MARQUEE_THRESHOLD_PX = 3;
+const MIN_DURATION_TICKS = 1;
 
 const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
   const context = usePianoRollContext();
@@ -24,6 +32,20 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
 
   const [diffPosition, setDiffPosition] = createSignal(0);
   const [getInitialNote, setInitialNote] = createSignal<Note>();
+
+  // Multi-note drag: the snapshot of every selected note at grab time plus the
+  // grab anchor, so each move applies an absolute (snapshot + delta) update.
+  let multiSnapshot: { id: string; note: Note }[] = [];
+  let grabTicks = 0;
+  let grabMidi = 0;
+  let multiDragMode: NoteDragMode;
+
+  // Marquee selection bookkeeping.
+  const [marquee, setMarquee] = createSignal<Marquee | undefined>();
+  let marqueeStartClient = { x: 0, y: 0 };
+  let marqueeStartPosition = { ticks: 0, v: 0 };
+  let marqueeMoved = false;
+  let marqueeAdditive = false;
 
   // The notes render below the time ruler (and the whole roll can be scrolled or
   // shifted by layout), so the viewport's cached scroller offset didn't line up
@@ -71,6 +93,8 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
       horiontalPosition,
     };
   };
+
+  // --- Single-note drag (unchanged behaviour; keeps per-note callback sync) ---
 
   const handleMouseMove = (mouseMoveEvent: MouseEvent) => {
     mouseMoveEvent.preventDefault();
@@ -141,13 +165,229 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
     window.addEventListener("mouseup", stopDragging);
   };
 
-  const getClasses = (noteDragMode: NoteDragMode) => {
-    return noteDragMode ? [styles.Note, styles[noteDragMode]] : [styles.Note];
+  // --- Multi-note drag (move / resize the whole selection together) ---------
+
+  const handleMultiMouseMove = (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!multiSnapshot.length) return;
+
+    const rawDeltaTicks = positionFromClient(horizontalViewPort(), event.clientX, "x") - grabTicks;
+    const deltaTicks = context.snapValueToGridIfEnabled(rawDeltaTicks, event.altKey);
+    const currentMidi =
+      context.mode === "keys"
+        ? Math.floor(128 - positionFromClient(verticalViewPort(), event.clientY, "y"))
+        : grabMidi;
+    const deltaMidi = currentMidi - grabMidi;
+
+    const snapById = new Map(multiSnapshot.map((entry) => [entry.id, entry.note]));
+
+    context.onTracksChange?.(
+      context.tracks.map((track) => ({
+        ...track,
+        notes: track.notes.map((note) => {
+          if (!note.id) return note;
+          const snap = snapById.get(note.id);
+          if (!snap) return note;
+
+          if (multiDragMode === "move") {
+            return {
+              ...note,
+              ticks: Math.max(0, snap.ticks + deltaTicks),
+              midi: context.mode === "keys" ? clamp(snap.midi + deltaMidi, 0, 127) : snap.midi,
+            };
+          }
+          if (multiDragMode === "trimEnd") {
+            return {
+              ...note,
+              durationTicks: Math.max(MIN_DURATION_TICKS, snap.durationTicks + deltaTicks),
+            };
+          }
+          // trimStart: move the left edge, keep the right edge fixed.
+          const newTicks = clamp(
+            snap.ticks + deltaTicks,
+            0,
+            snap.ticks + snap.durationTicks - MIN_DURATION_TICKS,
+          );
+          return {
+            ...note,
+            ticks: newTicks,
+            durationTicks: snap.ticks + snap.durationTicks - newTicks,
+          };
+        }),
+      })),
+    );
+  };
+
+  const stopMultiDragging = () => {
+    window.removeEventListener("mousemove", handleMultiMouseMove);
+    window.removeEventListener("mouseup", stopMultiDragging);
+    setIsDragging(false);
+    multiSnapshot = [];
+  };
+
+  const beginMultiDrag = (event: MouseEvent, ids: string[]) => {
+    const selected = new Set(ids);
+    multiSnapshot = context.tracks
+      .flatMap((track) => track.notes)
+      .filter((note) => note.id && selected.has(note.id))
+      .map((note) => ({ id: note.id as string, note: { ...note } }));
+
+    grabTicks = positionFromClient(horizontalViewPort(), event.clientX, "x");
+    grabMidi =
+      context.mode === "keys"
+        ? Math.floor(128 - positionFromClient(verticalViewPort(), event.clientY, "y"))
+        : 0;
+    multiDragMode = noteDragMode() ?? "move";
+
+    setIsDragging(true);
+    window.addEventListener("mousemove", handleMultiMouseMove);
+    window.addEventListener("mouseup", stopMultiDragging);
+  };
+
+  // --- Marquee selection + click-to-create on empty space -------------------
+
+  const handleMarqueeMove = (event: MouseEvent) => {
+    const dx = Math.abs(event.clientX - marqueeStartClient.x);
+    const dy = Math.abs(event.clientY - marqueeStartClient.y);
+    if (!marqueeMoved && dx < MARQUEE_THRESHOLD_PX && dy < MARQUEE_THRESHOLD_PX) return;
+    marqueeMoved = true;
+
+    const ticks = positionFromClient(horizontalViewPort(), event.clientX, "x");
+    const v = positionFromClient(verticalViewPort(), event.clientY, "y");
+
+    setMarquee({
+      t0: Math.min(marqueeStartPosition.ticks, ticks),
+      t1: Math.max(marqueeStartPosition.ticks, ticks),
+      v0: Math.min(marqueeStartPosition.v, v),
+      v1: Math.max(marqueeStartPosition.v, v),
+    });
+  };
+
+  const finishMarquee = (event: MouseEvent) => {
+    window.removeEventListener("mousemove", handleMarqueeMove);
+    window.removeEventListener("mouseup", finishMarquee);
+
+    const rect = marquee();
+    if (marqueeMoved && rect) {
+      const ids: string[] = [];
+      context.tracks.forEach((track, trackIndex) => {
+        if (context.mode === "keys" && trackIndex !== context.selectedTrackIndex) return;
+        track.notes.forEach((note) => {
+          if (!note.id) return;
+          const vUnit = context.mode === "keys" ? 127 - note.midi : trackIndex;
+          const overlapsTime = note.ticks < rect.t1 && note.ticks + note.durationTicks > rect.t0;
+          const overlapsRows = vUnit + 1 > rect.v0 && vUnit < rect.v1;
+          if (overlapsTime && overlapsRows) ids.push(note.id);
+        });
+      });
+      context.selectNotes(ids, marqueeAdditive);
+      setMarquee(undefined);
+      return;
+    }
+
+    setMarquee(undefined);
+
+    // A plain click on empty space creates a grid-length note and selects it.
+    const { targetTrackIndex, midi, horiontalPosition } = calculateNoteDragValues(event);
+    const ticks = context.snapValueToGridIfEnabled(horiontalPosition, event.altKey);
+    const id = createNoteId();
+    const newNote: Note = {
+      id,
+      midi,
+      ticks,
+      durationTicks: gridDivisionTicks(),
+      velocity: 100,
+    };
+    context.onInsertNote(targetTrackIndex, newNote);
+    context.selectNotes([id]);
+  };
+
+  // --- Keyboard actions ------------------------------------------------------
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    const meta = event.metaKey || event.ctrlKey;
+
+    switch (event.key) {
+      case "Backspace":
+      case "Delete":
+        event.preventDefault();
+        context.deleteSelectedNotes();
+        return;
+      case "Escape":
+        context.clearSelection();
+        return;
+      case "a":
+      case "A":
+        if (meta) {
+          event.preventDefault();
+          context.selectAllNotes();
+        }
+        return;
+      case "c":
+      case "C":
+        if (meta) context.copySelectedNotes();
+        return;
+      case "x":
+      case "X":
+        if (meta) context.cutSelectedNotes();
+        return;
+      case "v":
+      case "V":
+        if (meta) context.pasteNotes();
+        return;
+      case "d":
+      case "D":
+        if (meta) {
+          event.preventDefault();
+          context.duplicateSelectedNotes();
+        }
+        return;
+      case "ArrowLeft":
+        event.preventDefault();
+        context.nudgeSelectedNotes({
+          ticks: -(event.shiftKey ? context.barTicks() : context.gridTicks()),
+        });
+        return;
+      case "ArrowRight":
+        event.preventDefault();
+        context.nudgeSelectedNotes({
+          ticks: event.shiftKey ? context.barTicks() : context.gridTicks(),
+        });
+        return;
+      case "ArrowUp":
+        event.preventDefault();
+        context.nudgeSelectedNotes({ midi: event.shiftKey ? 12 : 1 });
+        return;
+      case "ArrowDown":
+        event.preventDefault();
+        context.nudgeSelectedNotes({ midi: event.shiftKey ? -12 : -1 });
+        return;
+      default:
+        return;
+    }
+  };
+
+  onCleanup(() => {
+    window.removeEventListener("mousemove", handleMouseMove);
+    window.removeEventListener("mouseup", stopDragging);
+    window.removeEventListener("mousemove", handleMultiMouseMove);
+    window.removeEventListener("mouseup", stopMultiDragging);
+    window.removeEventListener("mousemove", handleMarqueeMove);
+    window.removeEventListener("mouseup", finishMarquee);
+  });
+
+  const getClasses = (mode: NoteDragMode, selected: boolean) => {
+    const classes = mode ? [styles.Note, styles[mode]] : [styles.Note];
+    if (selected) classes.push(styles.selected);
+    return classes;
   };
 
   return (
     <div
       classList={{ [styles.PianoRollNotes]: true }}
+      tabindex={0}
+      onKeyDown={handleKeyDown}
       ref={(element) => {
         rootElement = element;
         if (typeof props.ref === "function") {
@@ -157,36 +397,48 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
       onMouseDown={(mouseDownEvent) => {
         mouseDownEvent.preventDefault();
         mouseDownEvent.stopPropagation();
+        rootElement?.focus();
 
-        const { targetTrackIndex, midi, horiontalPosition } =
-          calculateNoteDragValues(mouseDownEvent);
-
-        const ticks = context.snapValueToGridIfEnabled(
-          horiontalPosition,
-          mouseDownEvent.altKey,
-        );
-
-        const durationTicks = gridDivisionTicks();
-
-        const newNote: Note = {
-          midi,
-          ticks,
-          durationTicks,
-          velocity: 100,
+        // Start a potential marquee; if the pointer doesn't move it resolves to
+        // a click that creates a note (see finishMarquee).
+        marqueeStartClient = { x: mouseDownEvent.clientX, y: mouseDownEvent.clientY };
+        marqueeStartPosition = {
+          ticks: positionFromClient(horizontalViewPort(), mouseDownEvent.clientX, "x"),
+          v: positionFromClient(verticalViewPort(), mouseDownEvent.clientY, "y"),
         };
+        marqueeMoved = false;
+        marqueeAdditive = mouseDownEvent.shiftKey;
 
-        const newNoteIndex = context.onInsertNote(targetTrackIndex, newNote);
-
-        setIsDragging(true);
-        setCurrentNoteTrackIndex(targetTrackIndex);
-        setCurrentNoteIndex(newNoteIndex);
-        setInitialNote(newNote);
-        setDiffPosition(0);
-        setNoteDragMode("trimEnd");
-
-        startDragging();
+        window.addEventListener("mousemove", handleMarqueeMove);
+        window.addEventListener("mouseup", finishMarquee);
       }}
     >
+      <Show when={marquee()}>
+        {(rect) => {
+          const dimensions = createMemo(() => {
+            const horizontal = horizontalViewPort().calculatePixelDimensions(
+              rect().t0,
+              rect().t1 - rect().t0,
+            );
+            const vertical = verticalViewPort().calculatePixelDimensions(
+              rect().v0,
+              rect().v1 - rect().v0,
+            );
+            return { horizontal, vertical };
+          });
+          return (
+            <div
+              class={styles.Marquee}
+              style={{
+                left: `${dimensions().horizontal.offset}px`,
+                width: `${dimensions().horizontal.size}px`,
+                top: `${dimensions().vertical.offset}px`,
+                height: `${dimensions().vertical.size}px`,
+              }}
+            ></div>
+          );
+        }}
+      </Show>
       <For each={context.tracks}>
         {(track, trackIndex) => {
           return (
@@ -210,6 +462,8 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
                     horizontalViewPort().calculatePixelDimensions(note.ticks, note.durationTicks),
                   );
 
+                  const selected = createMemo(() => context.isNoteSelected(note.id));
+
                   return (
                     <Show
                       when={
@@ -218,7 +472,7 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
                       }
                     >
                       <div
-                        class={getClasses(noteDragMode()).join(" ")}
+                        class={getClasses(noteDragMode(), selected()).join(" ")}
                         draggable={false}
                         onMouseMove={(event) => {
                           if (isDragging()) return;
@@ -246,7 +500,40 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
                         }}
                         onMouseDown={(event) => {
                           event.stopPropagation();
+                          rootElement?.focus();
 
+                          const id = note.id;
+                          const additive = event.shiftKey || event.metaKey || event.ctrlKey;
+
+                          // Resolve the selection this gesture acts on.
+                          let activeIds: string[];
+                          if (id && additive) {
+                            const next = context.isNoteSelected(id)
+                              ? context.selectedNoteIds.filter((existing) => existing !== id)
+                              : [...context.selectedNoteIds, id];
+                            context.selectNotes(next);
+                            // Shift-clicking a selected note deselects it — no drag.
+                            if (!next.includes(id)) return;
+                            activeIds = next;
+                          } else if (id) {
+                            if (!context.isNoteSelected(id)) {
+                              context.selectNotes([id]);
+                              activeIds = [id];
+                            } else {
+                              activeIds = [...context.selectedNoteIds];
+                            }
+                          } else {
+                            activeIds = [];
+                          }
+
+                          // Multi-selection → move/resize the whole group together.
+                          if (activeIds.length > 1) {
+                            setInitialNote(note);
+                            beginMultiDrag(event, activeIds);
+                            return;
+                          }
+
+                          // Single note → existing per-note drag path.
                           const initialPosition = positionFromClient(
                             horizontalViewPort(),
                             event.clientX,

@@ -9,8 +9,7 @@ const usePianoRollGrid = () => {
   // A bar's length honours the time signature: beatsPerBar beats, each a
   // 1/beatUnit note (ppq is ticks per quarter). Falls back to 4/4.
   const measureTicks = createMemo(
-    () =>
-      (context.beatsPerBar * context.ppq * 4) / (context.beatUnit || 4) || context.ppq * 4,
+    () => (context.beatsPerBar * context.ppq * 4) / (context.beatUnit || 4) || context.ppq * 4,
   );
   const selectedGridDivisorTicks = createMemo(() => measureTicks() / context.gridDivision);
 
