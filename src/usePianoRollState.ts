@@ -1,7 +1,7 @@
 import { mergeProps } from "solid-js";
 import { createStore } from "solid-js/store";
 import { GridDivision } from "./types";
-import { Note, NoteExpressionField, Track } from "./types";
+import { AutomationParam, AutomationPoint, Note, NoteExpressionField, Track } from "./types";
 import { ClientRect } from "./useBoundingClientRect";
 
 const clampValue = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
@@ -45,6 +45,8 @@ type PianoRollState = {
   selectedNoteIds: string[];
   // Which per-note field the expression lane edits.
   expressionField: NoteExpressionField;
+  // Which parameter the (time-based) automation lane edits.
+  automationParam: AutomationParam;
   pressedKeys: Record<number, Record<number, boolean>>;
   notesScrollerClientRect: Pick<ClientRect, "left" | "width" | "top" | "height">;
   tracksScrollerClientRect: Pick<ClientRect, "left" | "width" | "top" | "height">;
@@ -71,6 +73,7 @@ const defaultState: PianoRollState = {
   selectedTrackIndex: 0,
   selectedNoteIds: [],
   expressionField: "velocity",
+  automationParam: "volume",
   pressedKeys: {},
   notesScrollerClientRect: { left: 0, width: 0, top: 0, height: 0 },
   tracksScrollerClientRect: { left: 0, width: 0, top: 0, height: 0 },
@@ -118,6 +121,7 @@ export const pianoRollStatePropNames = [
   "duplicateSelectedNotes",
   "setSelectedNotesField",
   "updateTrackNotes",
+  "setSelectedTrackAutomation",
   "gridTicks",
   "barTicks",
 ] as (keyof ReturnType<typeof createPianoRollstate>)[];
@@ -399,11 +403,31 @@ const createPianoRollstate = (
     handlers.onSelectedNoteIdsChange(newIds);
   };
 
+  // Replace the breakpoints of one automation parameter on the selected track,
+  // kept sorted by time.
+  const setSelectedTrackAutomation = (param: AutomationParam, points: AutomationPoint[]) => {
+    const trackIndex = state.selectedTrackIndex;
+    handlers.onTracksChange(
+      state.tracks.map((track, index) =>
+        index === trackIndex
+          ? {
+              ...track,
+              automation: {
+                ...track.automation,
+                [param]: [...points].sort((a, b) => a.ticks - b.ticks),
+              },
+            }
+          : track,
+      ),
+    );
+  };
+
   return mergeProps(state, {
     ...handlers,
     onNoteChange,
     onInsertNote,
     onRemoveNote,
+    setSelectedTrackAutomation,
     onNoteDown,
     onNoteUp,
     isKeyDown,

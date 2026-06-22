@@ -7,6 +7,7 @@ export type PianoRollContext = {
   showAllTracks?: boolean;
   showTrackList?: boolean;
   showExpressionLane?: boolean;
+  showAutomationLane?: boolean;
 } & ReturnType<typeof createPianoRollstate>;
 
 const PianoRollContext = createContext<PianoRollContext>();
@@ -27,4 +28,5 @@ export const splitContextProps = (allProps: PianoRollProps) =>
     "showAllTracks",
     "showTrackList",
     "showExpressionLane",
+    "showAutomationLane",
   ]);

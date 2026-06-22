@@ -21,10 +21,22 @@ export type Note = {
   reverse?: boolean;
 };
 
+// A single automation breakpoint: a parameter `value` at a point in time
+// (`ticks`). The consumer reads the piecewise-linear curve at the playhead.
+export type AutomationPoint = { ticks: number; value: number };
+
+// Continuous (time-based) automation parameters. Independent of notes — these
+// ramp across the clip regardless of where notes start/end.
+export type AutomationParam = "volume" | "detune" | "playbackRate";
+
+export type Automation = Partial<Record<AutomationParam, AutomationPoint[]>>;
+
 export type Track = {
   name: string;
   notes: Note[];
   color: string;
+  // Optional time-based automation curves, keyed by parameter.
+  automation?: Automation;
 };
 
 // Parameters of a note that the expression lanes can edit. `velocity` doubles

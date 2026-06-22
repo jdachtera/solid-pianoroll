@@ -6,6 +6,7 @@ import { PianoRollContextProvider, splitContextProps } from "./PianoRollContext"
 import PianoRollKeys from "./PianoRollKeys";
 import PianoRollNotes from "./PianoRollNotes";
 import PianoRollExpressionLane from "./PianoRollExpressionLane";
+import PianoRollAutomationLane from "./PianoRollAutomationLane";
 import PianoRollGrid from "./PianoRollGrid";
 import ZoomSliderControl from "./viewport/ZoomSliderControl";
 import PianoRollTrackList from "./PianoRollTrackList";
@@ -21,6 +22,8 @@ export type PianoRollProps = {
   // Show the Ableton-style per-note expression lane (velocity/detune/rate/
   // reverse) below the roll.
   showExpressionLane?: boolean;
+  // Show the time-based automation lane (volume/detune/rate breakpoint curves).
+  showAutomationLane?: boolean;
 } & ReturnType<typeof createPianoRollstate> &
   Omit<JSX.IntrinsicElements["div"], "onDurationChange">;
 
@@ -105,6 +108,14 @@ const PianoRoll = (allProps: ParentProps<PianoRollProps>) => {
               style={{ "margin-left": `${context.tracksScrollerClientRect.width + 24}px` }}
             >
               <PianoRollExpressionLane />
+            </div>
+          </Show>
+          <Show when={context.showAutomationLane}>
+            <div
+              class={styles.PianoRollExpressionLaneContainer}
+              style={{ "margin-left": `${context.tracksScrollerClientRect.width + 24}px` }}
+            >
+              <PianoRollAutomationLane />
             </div>
           </Show>
           <ZoomSliderControl
