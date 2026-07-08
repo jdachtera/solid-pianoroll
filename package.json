@@ -55,6 +55,9 @@
     "update-deps": "pnpm up -Li",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "solid-viewport": "^0.1.0"
+  },
   "optionalDependencies": {
     "@tonejs/midi": "^2.0.28",
     "tone": "^14.7.77"
