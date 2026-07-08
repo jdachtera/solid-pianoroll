@@ -39,9 +39,7 @@ const ScrollZoomContainer = (
     useViewPortDimension(propsWithDefaults.horizontalDimensionName),
   );
 
-  const handleScroll = (event: UIEvent & { currentTarget: Element }) => {
-    event.preventDefault();
-
+  const handleScroll = (event: { currentTarget: HTMLElement }) => {
     if (didUpdateScroll) {
       didUpdateScroll = false;
       return;
@@ -63,27 +61,23 @@ const ScrollZoomContainer = (
 
   const handleWheel = (event: WheelEvent & { currentTarget: Element }) => {
     if (event.altKey) {
+      // Modifier zooms the axis under the dominant delta, anchored on the pointer:
+      // the value under the cursor stays put (matching the waveform). Plain wheel
+      // (no modifier) falls through to native scroll, which pans time (X) + pitch
+      // (Y) at once.
       event.preventDefault();
+      const horizontal = Math.abs(event.deltaX) > Math.abs(event.deltaY);
+      const viewPort = horizontal ? horizontalViewPort() : verticalViewPort();
+      const delta = horizontal ? event.deltaX : event.deltaY;
+      const pointer = horizontal ? event.clientX : event.clientY;
 
-      if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
-        horizontalViewPort()?.onZoomChange?.(
-          horizontalViewPort().zoom / (1 + event.deltaX / horizontalViewPort().pixelSize),
-        );
-        const maxPosition = horizontalViewPort().calculateMaxPosition();
+      const valueAtPointer = viewPort.calculatePosition(pointer);
+      const newZoom = viewPort.zoom / (1 + delta / viewPort.pixelSize);
+      const newVisibleRange = viewPort.range / newZoom;
+      const fraction = (pointer - viewPort.pixelOffset) / viewPort.pixelSize;
 
-        horizontalViewPort()?.onPositionChange?.(
-          Math.min(maxPosition, horizontalViewPort()?.position),
-        );
-      } else {
-        verticalViewPort()?.onZoomChange?.(
-          verticalViewPort().zoom / (1 + event.deltaY / verticalViewPort().pixelSize),
-        );
-        const maxVerticalPosition = verticalViewPort().calculateMaxPosition();
-
-        verticalViewPort()?.onPositionChange?.(
-          Math.min(maxVerticalPosition, verticalViewPort()?.position),
-        );
-      }
+      viewPort.onZoomChange?.(newZoom);
+      viewPort.onPositionChange?.(valueAtPointer - fraction * newVisibleRange);
     } else if (!props.showScrollbar) {
       event.preventDefault();
       event.currentTarget.scrollLeft += event.deltaX;

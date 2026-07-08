@@ -59,6 +59,30 @@ with sync_playwright() as p:
     page.keyboard.up("Alt")
     check("alt+vertical wheel zooms pitch (note heightens)", h1 > h0 + 0.5, f"note h {h0:.1f} -> {h1:.1f}")
 
+    # Pointer-anchored zoom: the horizontal scroll offset of the notes container.
+    scroll_left = lambda: page.evaluate(
+        "()=>{let e=document.querySelector('[class*=PianoRollNotes_]');while(e){const s=getComputedStyle(e);if(s.overflow==='scroll'||s.overflowX==='scroll')return e.scrollLeft;e=e.parentElement;}return -1;}")
+    # Reset zoom-in state is fine; compare left-edge vs right-edge anchoring on fresh zoom-in.
+    page.reload(wait_until="networkidle")
+    page.wait_for_timeout(1000)
+    nb = page.evaluate("()=>{const e=document.querySelector('[class*=PianoRollNotes_]');const r=e.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height};}")
+    left_x, right_x, midy = nb["x"] + 25, nb["x"] + nb["w"] - 25, nb["y"] + nb["h"] / 2
+
+    page.keyboard.down("Alt")
+    page.mouse.move(left_x, midy)
+    sl_l0 = scroll_left()
+    page.mouse.wheel(-160, 0)
+    page.wait_for_timeout(200)
+    sl_l1 = scroll_left()
+    page.mouse.move(right_x, midy)
+    sl_r0 = scroll_left()
+    page.mouse.wheel(-160, 0)
+    page.wait_for_timeout(200)
+    sl_r1 = scroll_left()
+    page.keyboard.up("Alt")
+    check("zoom anchored: left-edge zoom keeps scroll ~put", abs(sl_l1 - sl_l0) < 40, f"scrollLeft {sl_l0:.0f} -> {sl_l1:.0f}")
+    check("zoom anchored: right-edge zoom scrolls right", sl_r1 > sl_r0 + 20, f"scrollLeft {sl_r0:.0f} -> {sl_r1:.0f}")
+
     check("no console/page errors", not errors, f"{errors[:3]}")
     browser.close()
 
