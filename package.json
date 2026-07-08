@@ -1,5 +1,5 @@
 {
-  "version": "0.0.28",
+  "version": "0.0.29",
   "name": "solid-pianoroll",
   "description": "Pianoroll UI Control for Solid JS apps",
   "license": "MIT",
@@ -18,7 +18,7 @@
   "files": [
     "dist"
   ],
-  "packageManager": "pnpm@7.22.0",
+  "packageManager": "pnpm@10.12.4",
   "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
