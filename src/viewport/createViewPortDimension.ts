@@ -1,6 +1,16 @@
-import { createEffect } from "solid-js";
-import { createStore } from "solid-js/store";
+import { createViewPortAxis } from "solid-viewport";
 
+// One piano-roll axis, now backed by solid-viewport's createViewPortAxis. This is an
+// adapter: the method names below (calculatePixel*/calculatePosition/isVisible) are
+// kept so PianoRollNotes/Keys/Grid/Scale/PlayHead and the scroll container are
+// untouched, while the math comes from the shared library. Mapping:
+//   calculatePixelValue     = toPixels
+//   calculatePixelOffset    = toPixelOffset
+//   calculatePosition       = toPosition
+//   calculatePixelDimensions= dimensions     (raw offset/size, culled via isVisible)
+//   calculateVisibleRange   = visibleRange
+//   calculateMaxPosition    = maxPosition
+//   isVisible               = isVisible
 export type ViewPortDimension = ReturnType<typeof createViewPortDimension>;
 export type ViewPortDimensionName = string;
 export type ViewPortDimensionState = {
@@ -22,67 +32,60 @@ export type ViewPortDimensionState = {
 };
 
 export default function createViewPortDimension(getState: () => ViewPortDimensionState) {
-  const getStateWithFunctions = () => {
-    const state = getState();
-
-    const onZoomChange = (zoom: number) =>
-      state.onZoomChange?.(clamp(zoom, state.minZoom, state.maxZoom));
-
-    const onPositionChange = (position: number) => state.onPositionChange?.(position);
-
+  const axis = createViewPortAxis(() => {
+    const s = getState();
     return {
-      ...state,
-      onZoomChange,
-      onPositionChange,
-      calculatePixelOffset,
-      calculatePixelValue,
-      calculatePosition,
-      calculatePixelDimensions,
-      calculateVisibleRange,
-      calculateMaxPosition,
-      isVisible,
+      name: s.name,
+      position: s.position,
+      range: s.range,
+      pixelOffset: s.pixelOffset,
+      pixelSize: s.pixelSize,
+      zoom: s.zoom,
+      minZoom: s.minZoom,
+      maxZoom: s.maxZoom,
+      onPositionChange: s.onPositionChange,
+      onZoomChange: s.onZoomChange,
     };
+  });
+
+  // Getters delegate to the axis store so reads stay reactive; methods delegate to
+  // the axis's (rebuilt-on-change) scalers.
+  return {
+    get name() {
+      return axis.name;
+    },
+    get position() {
+      return axis.position;
+    },
+    get range() {
+      return axis.range;
+    },
+    get pixelOffset() {
+      return axis.pixelOffset;
+    },
+    get pixelSize() {
+      return axis.pixelSize;
+    },
+    get zoom() {
+      return axis.zoom;
+    },
+    get minZoom() {
+      return axis.minZoom;
+    },
+    get maxZoom() {
+      return axis.maxZoom;
+    },
+    onPositionChange: (position: number) => axis.onPositionChange?.(position),
+    onZoomChange: (zoom: number) => axis.onZoomChange?.(zoom),
+    calculatePixelValue: (position?: number) => axis.toPixels(position),
+    calculatePixelOffset: (position: number) => axis.toPixelOffset(position),
+    calculatePosition: (offset: number) => axis.toPosition(offset),
+    calculatePixelDimensions: (position: number, length: number) =>
+      axis.dimensions(position, length),
+    calculateVisibleRange: () => axis.visibleRange(),
+    calculateMaxPosition: () => axis.maxPosition(),
+    isVisible: (dimensions: { offset: number; size: number }) => axis.isVisible(dimensions),
   };
-
-  const [state, setState] = createStore(getStateWithFunctions());
-  createEffect(() => setState(getStateWithFunctions()));
-
-  function calculatePixelValue(position: number = state.position) {
-    const virtualSize = state.pixelSize * state.zoom;
-    return (position / state.range) * virtualSize;
-  }
-
-  function calculatePixelOffset(position: number) {
-    return calculatePixelValue(position) - calculatePixelValue(state.position);
-  }
-
-  function calculatePosition(offset: number) {
-    const percentX = (offset - state.pixelOffset) / state.pixelSize;
-    const position = state.position + percentX * calculateVisibleRange();
-
-    return position;
-  }
-
-  function calculateVisibleRange() {
-    return state.range / state.zoom;
-  }
-
-  function calculateMaxPosition() {
-    return state.range - state.range / state.zoom;
-  }
-
-  function calculatePixelDimensions(position: number, length: number) {
-    const offset = calculatePixelOffset(position);
-    const size = calculatePixelValue(length);
-
-    return { offset, size };
-  }
-
-  function isVisible({ offset, size }: { offset: number; size: number }) {
-    return offset + size > 0 && offset < state.pixelSize;
-  }
-
-  return state;
 }
 
 export const clamp = (value: number, min: number, max: number) =>
