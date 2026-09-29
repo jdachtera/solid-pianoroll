@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@types/node': ^20.19.0
+
 importers:
 
   .:
@@ -53,10 +56,10 @@ importers:
         version: 4.2.3(typescript@4.9.5)
       vite:
         specifier: ^4.0.4
-        version: 4.5.14(@types/node@26.1.1)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0)
+        version: 4.5.14(@types/node@20.19.43)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0)
       vite-plugin-solid:
         specifier: ^2.5.0
-        version: 2.11.12(solid-js@1.9.14)(vite@4.5.14(@types/node@26.1.1)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0))
+        version: 2.11.12(solid-js@1.9.14)(vite@4.5.14(@types/node@20.19.43)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0))
       vitest:
         specifier: ^0.28.3
         version: 0.28.5(jsdom@21.1.2)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0)
@@ -611,8 +614,8 @@ packages:
   '@types/chai@4.3.20':
     resolution: {integrity: sha512-/pC9HAB5I/xMlc5FP77qjCnI16ChlJfW0tGa0IUcFn38VJrTV6DeZ60NU5KZBtaOZqjdpwTWohz5HU1RrhiYxQ==}
 
-  '@types/node@26.1.1':
-    resolution: {integrity: sha512-nxAkRSVkN1Y0JC1W8ky/fTfkGsMmcrRsbx+3XoZE+rMOX71kLYTV7fLXpqud1GpbpP5TuffXFqfX7fH2GgZREw==}
+  '@types/node@20.19.43':
+    resolution: {integrity: sha512-6oYBAi5ikg4Pl+kGsoYtawUMBT2zZMCvPNF7pVLnHZfd1zf38DRiWn/gT01RYCdUqkv7Fhr+C9ot4/tb+2sVvA==}
 
   '@types/postcss-modules-local-by-default@4.0.2':
     resolution: {integrity: sha512-CtYCcD+L+trB3reJPny+bKWKMzPfxEyQpKIwit7kErnOexf5/faaGpkFy4I5AwbV4hp1sk7/aTg0tt0B67VkLQ==}
@@ -1822,8 +1825,8 @@ packages:
   ufo@1.6.4:
     resolution: {integrity: sha512-JFNbkD1Svwe0KvGi8GOeLcP4kAWQ609twvCdcHxq1oSL8svv39ZuSvajcD8B+5D0eL4+s1Is2D/O6KN3qcTeRA==}
 
-  undici-types@8.3.0:
-    resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
+  undici-types@6.21.0:
+    resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
   universalify@0.2.0:
     resolution: {integrity: sha512-CJ1QgKmNg3CwvAv/kOFmtnEN05f0D/cn9QntgNOQlQF9dgvVTHj3t+8JPdjqawCHk7V/KA+fbUqzZ9XWhcqPUg==}
@@ -1865,7 +1868,7 @@ packages:
     engines: {node: ^14.18.0 || >=16.0.0}
     hasBin: true
     peerDependencies:
-      '@types/node': '>= 14'
+      '@types/node': ^20.19.0
       less: '*'
       lightningcss: ^1.21.0
       sass: '*'
@@ -2459,9 +2462,9 @@ snapshots:
 
   '@types/chai@4.3.20': {}
 
-  '@types/node@26.1.1':
+  '@types/node@20.19.43':
     dependencies:
-      undici-types: 8.3.0
+      undici-types: 6.21.0
 
   '@types/postcss-modules-local-by-default@4.0.2':
     dependencies:
@@ -3690,7 +3693,7 @@ snapshots:
 
   ufo@1.6.4: {}
 
-  undici-types@8.3.0: {}
+  undici-types@6.21.0: {}
 
   universalify@0.2.0: {}
 
@@ -3709,7 +3712,7 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  vite-node@0.28.5(@types/node@26.1.1)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0):
+  vite-node@0.28.5(@types/node@20.19.43)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0):
     dependencies:
       cac: 6.7.14
       debug: 4.4.3
@@ -3718,7 +3721,7 @@ snapshots:
       picocolors: 1.1.1
       source-map: 0.6.1
       source-map-support: 0.5.21
-      vite: 4.5.14(@types/node@26.1.1)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0)
+      vite: 4.5.14(@types/node@20.19.43)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -3729,7 +3732,7 @@ snapshots:
       - supports-color
       - terser
 
-  vite-plugin-solid@2.11.12(solid-js@1.9.14)(vite@4.5.14(@types/node@26.1.1)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0)):
+  vite-plugin-solid@2.11.12(solid-js@1.9.14)(vite@4.5.14(@types/node@20.19.43)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0)):
     dependencies:
       '@babel/core': 7.29.7
       '@types/babel__core': 7.20.5
@@ -3737,33 +3740,33 @@ snapshots:
       merge-anything: 5.1.7
       solid-js: 1.9.14
       solid-refresh: 0.6.3(solid-js@1.9.14)
-      vite: 4.5.14(@types/node@26.1.1)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0)
-      vitefu: 1.1.3(vite@4.5.14(@types/node@26.1.1)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0))
+      vite: 4.5.14(@types/node@20.19.43)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0)
+      vitefu: 1.1.3(vite@4.5.14(@types/node@20.19.43)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0))
     transitivePeerDependencies:
       - supports-color
 
-  vite@4.5.14(@types/node@26.1.1)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0):
+  vite@4.5.14(@types/node@20.19.43)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0):
     dependencies:
       esbuild: 0.18.20
       postcss: 8.5.16
       rollup: 3.30.0
     optionalDependencies:
-      '@types/node': 26.1.1
+      '@types/node': 20.19.43
       fsevents: 2.3.3
       less: 4.6.7
       lightningcss: 1.32.0
       sass: 1.101.0
       stylus: 0.59.0
 
-  vitefu@1.1.3(vite@4.5.14(@types/node@26.1.1)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0)):
+  vitefu@1.1.3(vite@4.5.14(@types/node@20.19.43)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0)):
     optionalDependencies:
-      vite: 4.5.14(@types/node@26.1.1)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0)
+      vite: 4.5.14(@types/node@20.19.43)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0)
 
   vitest@0.28.5(jsdom@21.1.2)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0):
     dependencies:
       '@types/chai': 4.3.20
       '@types/chai-subset': 1.3.6(@types/chai@4.3.20)
-      '@types/node': 26.1.1
+      '@types/node': 20.19.43
       '@vitest/expect': 0.28.5
       '@vitest/runner': 0.28.5
       '@vitest/spy': 0.28.5
@@ -3782,8 +3785,8 @@ snapshots:
       tinybench: 2.9.0
       tinypool: 0.3.1
       tinyspy: 1.1.1
-      vite: 4.5.14(@types/node@26.1.1)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0)
-      vite-node: 0.28.5(@types/node@26.1.1)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0)
+      vite: 4.5.14(@types/node@20.19.43)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0)
+      vite-node: 0.28.5(@types/node@20.19.43)(less@4.6.7)(lightningcss@1.32.0)(sass@1.101.0)(stylus@0.59.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
       jsdom: 21.1.2

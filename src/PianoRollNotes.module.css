@@ -14,9 +14,22 @@
   box-sizing: border-box;
   border-width: 0.5px;
   border-style: solid;
-  border-color: #a00;
+  border-color: var(--pianoroll-note-border, #a00);
+  border-radius: var(--pianoroll-note-radius, 0);
 
   cursor: move;
+}
+
+/* An editable note claims the touch gesture that starts on it, so dragging it
+   moves the note rather than panning the roll underneath. Only the note itself:
+   the empty canvas around it keeps the browser's own scrolling, which is how a
+   finger still gets around a roll it is also allowed to edit.
+
+   Deliberately NOT applied when read-only — there, a drag starting on a note
+   has nothing to do but scroll, and stealing it would create dead patches where
+   the roll simply refuses to move. */
+.Note.editable {
+  touch-action: none;
 }
 
 .Note.trimStart {

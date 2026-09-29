@@ -16,9 +16,11 @@ const PianoRollKeys = () => {
 
   createEffect(() => {
     if (isMouseDown()) {
-      window.addEventListener("mouseup", handleMouseUp);
+      window.addEventListener("pointerup", handleMouseUp);
+      window.addEventListener("pointercancel", handleMouseUp);
     } else {
-      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("pointerup", handleMouseUp);
+      window.removeEventListener("pointercancel", handleMouseUp);
     }
   });
 
@@ -46,19 +48,26 @@ const PianoRollKeys = () => {
                     [styles["white"]]: !key().isBlack,
                     [styles["down"]]: isDown(),
                   }}
-                  onMouseDown={() => {
+                  onPointerDown={(event) => {
+                    // Touch implicitly captures the pointer to the element it
+                    // started on, which would make every note in a glissando
+                    // sound as the first key. Releasing the capture puts the
+                    // enter/leave events back on the keys actually under the
+                    // finger, which is what makes sliding along the keyboard
+                    // play the keyboard.
+                    event.currentTarget.releasePointerCapture?.(event.pointerId);
                     setIsMouseDown(true);
                     context.onNoteDown(context.selectedTrackIndex, key().number);
                   }}
-                  onMouseUp={() => {
+                  onPointerUp={() => {
                     context.onNoteUp(context.selectedTrackIndex, key().number);
                   }}
-                  onMouseEnter={() => {
+                  onPointerEnter={() => {
                     if (isMouseDown()) {
                       context.onNoteDown(context.selectedTrackIndex, key().number);
                     }
                   }}
-                  onMouseLeave={() => {
+                  onPointerLeave={() => {
                     if (isMouseDown()) {
                       context.onNoteUp(context.selectedTrackIndex, key().number);
                     }

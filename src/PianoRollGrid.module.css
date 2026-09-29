@@ -7,19 +7,19 @@
 .PianoRollGrid-Row {
   position: absolute;
   border-style: solid;
-  border-color: gray;
+  border-color: var(--pianoroll-grid-row-line, gray);
   width: 100%;
   border-width: 0;
 }
 .PianoRollGrid-Row.IsDark {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: var(--pianoroll-grid-row-shade, rgba(0, 0, 0, 0.2));
 }
 
 .PianoRollGrid-Row.Key {
   border-width: 0px 1px 0px 0;
 }
 .PianoRollGrid-Row.IsBlackAndNextIsWhite {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: var(--pianoroll-grid-row-shade, rgba(0, 0, 0, 0.2));
   border-width: 0.1px 1px 0.1px 0;
 }
 
@@ -30,14 +30,14 @@
   height: 100%;
   border-left-style: solid;
   border-left-width: 0.5px;
-  border-left-color: #bbb;
-  background: #ccc;
+  border-left-color: var(--pianoroll-grid-line, #bbb);
+  background: var(--pianoroll-grid-background, #ccc);
 }
 
 .PianoRollGrid-Time.Highlighted {
-  background: #ddd;
+  background: var(--pianoroll-grid-highlight, #ddd);
 }
 
 .PianoRollGrid-Time.HighlightedBorder {
-  border-left-color: gray;
+  border-left-color: var(--pianoroll-grid-line-strong, gray);
 }

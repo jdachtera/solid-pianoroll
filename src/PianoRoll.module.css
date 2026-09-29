@@ -1,3 +1,35 @@
+/* Theming contract.
+ *
+ * Every colour the roll draws is read as var(--pianoroll-*, <default>) at the
+ * place it is used, and NOWHERE are those variables given a value here. That is
+ * deliberate and it is the whole trick: a value set on this element would beat
+ * the same variable inherited from an ancestor — an element's own declaration
+ * always wins over inheritance, whatever the selector's specificity — so
+ * declaring the defaults on .PianoRoll (which is what this file did first, and
+ * what a test on a device immediately caught) makes them impossible to override
+ * from outside. Left undeclared, each var() falls back to its default until
+ * someone sets the variable anywhere up the tree, and then that wins.
+ *
+ * It works despite the class names being hashed by CSS modules, which is the
+ * reason an outside stylesheet could not reach in before, however specific it
+ * was willing to be.
+ *
+ *   --pianoroll-grid-background      --pianoroll-scale-background
+ *   --pianoroll-grid-highlight       --pianoroll-scale-highlight
+ *   --pianoroll-grid-line            --pianoroll-scale-line
+ *   --pianoroll-grid-line-strong     --pianoroll-scale-line-strong
+ *   --pianoroll-grid-row-line        --pianoroll-scale-underline
+ *   --pianoroll-grid-row-shade       --pianoroll-scale-label
+ *
+ *   --pianoroll-key-white            --pianoroll-note-border
+ *   --pianoroll-key-black            --pianoroll-note-radius
+ *   --pianoroll-key-down             --pianoroll-playhead
+ *   --pianoroll-key-line             --pianoroll-playhead-width
+ *   --pianoroll-keys-background
+ *
+ *   --pianoroll-track-background     --pianoroll-track-selected
+ *   --pianoroll-track-line
+ */
 .PianoRoll {
   box-sizing: border-box;
   display: flex;

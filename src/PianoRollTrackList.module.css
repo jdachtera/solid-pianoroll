@@ -9,15 +9,15 @@
   position: absolute;
   box-sizing: border-box;
   width: 100%;
-  border-color: #000;
+  border-color: var(--pianoroll-track-line, #000);
   border-style: solid;
   border-right-width: 1px;
   border-bottom-width: 1px;
   padding: 2px;
   cursor: pointer;
-  background: lightgrey;
+  background: var(--pianoroll-track-background, lightgrey);
 }
 
-Track.selected {
-  background: gray;
+.Track.selected {
+  background: var(--pianoroll-track-selected, gray);
 }

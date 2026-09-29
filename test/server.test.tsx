@@ -1,30 +1,32 @@
-import { describe, expect, it } from 'vitest'
-import { isServer, renderToString } from 'solid-js/web'
-import { Hello, createHello } from '../src'
+import { describe, expect, it } from "vitest";
+import { isServer } from "solid-js/web";
+import { useNotes } from "../src";
+import type { Note } from "../src";
 
-describe('environment', () => {
-  it('runs on server', () => {
-    expect(typeof window).toBe('undefined')
-    expect(isServer).toBe(true)
-  })
-})
+const note = (ticks: number): Note => ({
+  ticks,
+  durationTicks: 120,
+  midi: 60,
+  velocity: 1,
+});
 
-describe('createHello', () => {
-  it('Returns a Hello World signal', () => {
-    const [hello] = createHello()
-    expect(hello()).toBe('Hello World!')
-  })
+describe("environment", () => {
+  it("runs on server", () => {
+    expect(typeof window).toBe("undefined");
+    expect(isServer).toBe(true);
+  });
+});
 
-  it('Changes the hello target', () => {
-    const [hello, setHello] = createHello()
-    setHello('Solid')
-    expect(hello()).toBe('Hello Solid!')
-  })
-})
+describe("useNotes on the server", () => {
+  // The note model is plain data and has no business needing a DOM. Rendering
+  // the roll itself does, which is why only this half runs here.
+  it("orders notes with no DOM present", () => {
+    const { notes, onInsertNote } = useNotes();
 
-describe('Hello', () => {
-  it('renders a hello component', () => {
-    const string = renderToString(() => <Hello />)
-    expect(string).toBe('<div>Hello World!</div>')
-  })
-})
+    onInsertNote(note(480));
+    onInsertNote(note(0));
+    onInsertNote(note(960));
+
+    expect(notes().map((n) => n.ticks)).toEqual([0, 480, 960]);
+  });
+});

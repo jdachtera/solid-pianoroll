@@ -2,4 +2,9 @@
   height: 100%;
   width: 100%;
   z-index: 4;
+  /* One finger still scrolls natively, which is how the roll is panned. Two
+     fingers are claimed here instead of being handed to the browser's own
+     page zoom: inside a roll, a pinch means "show me more bars" or "show me
+     more octaves", never "make the whole app bigger". */
+  touch-action: pan-x pan-y;
 }

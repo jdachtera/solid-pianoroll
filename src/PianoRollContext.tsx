@@ -6,6 +6,8 @@ import createPianoRollstate, { pianoRollStatePropNames } from "./usePianoRollSta
 export type PianoRollContext = {
   showAllTracks?: boolean;
   showTrackList?: boolean;
+  /** Display the notes, refuse to change them — see PianoRollProps. */
+  readOnly?: boolean;
 } & ReturnType<typeof createPianoRollstate>;
 
 const PianoRollContext = createContext<PianoRollContext>();
@@ -21,4 +23,9 @@ export const usePianoRollContext = () => {
 };
 
 export const splitContextProps = (allProps: PianoRollProps) =>
-  splitProps(allProps, [...pianoRollStatePropNames, "showAllTracks", "showTrackList"]);
+  splitProps(allProps, [
+    ...pianoRollStatePropNames,
+    "showAllTracks",
+    "showTrackList",
+    "readOnly",
+  ]);

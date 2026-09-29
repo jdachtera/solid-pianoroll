@@ -17,6 +17,21 @@ import PianoRollScale from "./PianoRollScale";
 export type PianoRollProps = {
   showAllTracks?: boolean;
   showTrackList?: boolean;
+  /** Show the notes without letting anyone edit them.
+   *
+   * Without this the roll is always editable, and editable is a destructive
+   * default for a viewer: the notes layer inserts a note on any press that is
+   * not on an existing one, so simply LOOKING at a track — scrolling it with a
+   * finger, tapping to focus — writes to it. A caller displaying a recording it
+   * does not own (a loop taken from a synth, a file being previewed) has no way
+   * to say "draw this" without also saying "and let it be rewritten".
+   *
+   * Read-only suppresses exactly the note mutations: insert, move, trim and
+   * delete. Everything else still works, because none of it changes the music —
+   * scrolling, zooming, switching tracks, and playing the keyboard down the side
+   * (which sounds notes through onNoteDown/onNoteUp rather than recording them).
+   */
+  readOnly?: boolean;
 } & ReturnType<typeof createPianoRollstate> &
   Omit<JSX.IntrinsicElements["div"], "onDurationChange">;
 
@@ -26,7 +41,16 @@ const PianoRoll = (allProps: ParentProps<PianoRollProps>) => {
 
   return (
     <PianoRollContextProvider value={context}>
-      <div {...divProps} class={styles.PianoRoll}>
+      {/* The consumer's own class is kept alongside ours rather than replaced.
+          `class={...}` after the spread used to overwrite whatever they passed,
+          so <PianoRoll class="my-roll"> silently styled nothing — the one hook
+          a caller would reach for first. */}
+      <div
+        {...divProps}
+        class={[styles.PianoRoll, typeof divProps.class === "string" ? divProps.class : ""]
+          .filter(Boolean)
+          .join(" ")}
+      >
         <PianoRollScrollZoomViewPort>
           <div class={styles.PianoRollContainer}>
             <ZoomSliderControl orientation="vertical" dimensionName="verticalTracks" />

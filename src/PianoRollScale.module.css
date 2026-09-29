@@ -11,11 +11,11 @@
   height: 100%;
   border-left-style: solid;
   border-left-width: 0.5px;
-  border-left-color: x#666;
-  border-bottom-color: #333;
+  border-left-color: var(--pianoroll-scale-line, #666);
+  border-bottom-color: var(--pianoroll-scale-underline, #333);
   border-bottom-style: solid;
   border-bottom-width: 0.5px;
-  background: #777;
+  background: var(--pianoroll-scale-background, #777);
   display: flex;
   align-items: center;
 }
@@ -23,15 +23,15 @@
 .PianoRollScale-Label {
   position: absolute;
   z-index: 1;
-  color: #ccc;
+  color: var(--pianoroll-scale-label, #ccc);
   margin-left: 3px;
   font-size: 0.8em;
 }
 
 .PianoRollScale-Time.Highlighted {
-  background: #666;
+  background: var(--pianoroll-scale-highlight, #666);
 }
 
 .PianoRollScale-Time.HighlightedBorder {
-  border-left-color: #111;
+  border-left-color: var(--pianoroll-scale-line-strong, #111);
 }

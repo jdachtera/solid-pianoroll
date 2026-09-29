@@ -9,7 +9,7 @@ const PianoRollScale = () => {
   const grid = usePianoRollGrid();
   const context = usePianoRollContext();
 
-  const updatePlayheadPosition = (event: MouseEvent) => {
+  const updatePlayheadPosition = (event: PointerEvent) => {
     const position = horizontalViewPort().calculatePosition(event.clientX);
     context.onPlayHeadPositionChange(position, event);
   };
@@ -17,17 +17,22 @@ const PianoRollScale = () => {
   return (
     <div
       class={styles.PianoRollScale}
-      onMouseDown={(event) => {
+      onPointerDown={(event) => {
         updatePlayheadPosition(event);
 
-        const handleMouseUp = () => {
-          window.removeEventListener("mousemove", updatePlayheadPosition);
-          window.removeEventListener("mouseup", handleMouseUp);
+        const handlePointerUp = () => {
+          window.removeEventListener("pointermove", updatePlayheadPosition);
+          window.removeEventListener("pointerup", handlePointerUp);
+          window.removeEventListener("pointercancel", handlePointerUp);
         };
 
-        window.addEventListener("mousemove", updatePlayheadPosition);
-        window.addEventListener("mouseup", handleMouseUp);
+        window.addEventListener("pointermove", updatePlayheadPosition);
+        window.addEventListener("pointerup", handlePointerUp);
+        window.addEventListener("pointercancel", handlePointerUp);
       }}
+      // Scrubbing the ruler is a drag along the same axis the roll scrolls in,
+      // so without this the browser pans instead and the playhead never moves.
+      style={{ "touch-action": "none" }}
     >
       <Index each={grid()}>
         {(entry) => {

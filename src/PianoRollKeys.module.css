@@ -2,16 +2,21 @@
   position: relative;
   height: 100%;
   border-width: 0;
-  border-color: #000;
+  border-color: var(--pianoroll-key-line, #000);
   border-style: solid;
   border-right-width: 1px;
   border-left-width: 1px;
   background: white;
   cursor: pointer;
-  background: black;
+  background: var(--pianoroll-keys-background, black);
 }
 
 .Key {
+  /* Playing the keyboard is a press and a slide, both of which the browser would
+     otherwise read as a scroll of the roll beside it. The keys are a fixed
+     column that never needs to pan horizontally, so they can own the gesture
+     outright. */
+  touch-action: none;
   transition-property: background-color, box-shadow;
   transition-duration: 200ms;
   transition-timing-function: ease-out;
@@ -20,23 +25,23 @@
   box-sizing: border-box;
   width: 120%;
   left: -20%;
-  border-color: #000;
+  border-color: var(--pianoroll-key-line, #000);
   border-style: solid;
   transform: rotateX(0deg);
   perspective: 100px;
 }
 
 .black {
-  background: black;
+  background: var(--pianoroll-key-black, black);
   border-top-right-radius: 12%;
   border-bottom-right-radius: 12%;
   margin-left: -20%;
   z-index: 1;
-  border: 1px black outset;
+  border: 1px var(--pianoroll-key-black, black) outset;
 }
 
 .white {
-  background: white;
+  background: var(--pianoroll-key-white, white);
   border-top-width: 0.5px;
   border-bottom-width: 0.5px;
   border-top-right-radius: 4%;
@@ -45,6 +50,6 @@
 
 .down {
   transition: none;
-  background: red;
+  background: var(--pianoroll-key-down, red);
   transform: rotateX(0deg) rotateY(20deg);
 }
