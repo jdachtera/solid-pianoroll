@@ -2,10 +2,14 @@ import { ParentProps } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
 import { ScrollZoomViewPort } from "./viewport/ScrollZoomViewPort";
 
+/** The scale strip above the notes (PianoRoll.tsx). */
+export const SCALE_HEIGHT = 30;
+
 const PianoRollScrollZoomViewPort = (props: ParentProps) => {
   const zoomFactor = 500;
 
   const context = usePianoRollContext();
+  const notesHeight = () => Math.max(1, context.notesScrollerClientRect.height - SCALE_HEIGHT);
 
   return (
     <ScrollZoomViewPort
@@ -22,17 +26,20 @@ const PianoRollScrollZoomViewPort = (props: ParentProps) => {
           minZoom: 1,
           maxZoom: 500,
         }),
+        // The keys and the notes live BELOW the scale strip, so the vertical
+        // axis is the scroller minus that strip. Sized to the whole scroller it
+        // laid out SCALE_HEIGHT more pixels of keys than their box holds: the
+        // key column overflowed and scrolled on its own, and the bottom rows of
+        // notes were drawn out of view.
         vertical: () => ({
-          pixelOffset: context.notesScrollerClientRect.top,
-          pixelSize: context.notesScrollerClientRect.height,
+          pixelOffset: context.notesScrollerClientRect.top + SCALE_HEIGHT,
+          pixelSize: notesHeight(),
           position: context.verticalPosition,
           range: 128,
-          zoom: context.verticalZoom * (zoomFactor / context.notesScrollerClientRect.height),
+          zoom: context.verticalZoom * (zoomFactor / notesHeight()),
           onPositionChange: context.onVerticalPositionChange,
           onZoomChange: (verticalZoom) =>
-            context.onVerticalZoomChange?.(
-              verticalZoom / (zoomFactor / context.notesScrollerClientRect.height),
-            ),
+            context.onVerticalZoomChange?.(verticalZoom / (zoomFactor / notesHeight())),
           minZoom: 1,
           maxZoom: 10,
         }),

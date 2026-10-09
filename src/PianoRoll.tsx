@@ -9,7 +9,7 @@ import PianoRollGrid from "./PianoRollGrid";
 import ZoomSliderControl from "./viewport/ZoomSliderControl";
 import PianoRollTrackList from "./PianoRollTrackList";
 import createPianoRollstate from "./usePianoRollState";
-import PianoRollScrollZoomViewPort from "./PianoRollScrollZoomViewPort";
+import PianoRollScrollZoomViewPort, { SCALE_HEIGHT } from "./PianoRollScrollZoomViewPort";
 import PianoRollNotesScroller from "./PianoRollNotesScroller";
 import PianoRollTrackListScroller from "./PianoRollTrackListScroller";
 import PianoRollScale from "./PianoRollScale";
@@ -53,7 +53,10 @@ const PianoRoll = (allProps: ParentProps<PianoRollProps>) => {
       >
         <PianoRollScrollZoomViewPort>
           <div class={styles.PianoRollContainer}>
-            <ZoomSliderControl orientation="vertical" dimensionName="verticalTracks" />
+            {/* Zooms the track list, so it only belongs where there is one. */}
+            <Show when={context.showTrackList}>
+              <ZoomSliderControl orientation="vertical" dimensionName="verticalTracks" />
+            </Show>
             <div
               classList={{
                 [styles.PianoRollLeftColumn]: true,
@@ -106,7 +109,7 @@ const PianoRoll = (allProps: ParentProps<PianoRollProps>) => {
                   overflow: "hidden",
                 }}
               >
-                <div style={{ height: "30px" }}>
+                <div style={{ height: `${SCALE_HEIGHT}px` }}>
                   <PianoRollScale />
                 </div>
 
