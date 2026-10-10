@@ -125,8 +125,8 @@ const PianoRoll = (allProps: ParentProps<PianoRollProps>) => {
           <ZoomSliderControl
             orientation="horizontal"
             style={{
-              "margin-left": `${context.tracksScrollerClientRect.width + 24}px`,
-              "margin-right": "24px",
+              "margin-left": `${context.tracksScrollerClientRect.width + 22}px`,
+              "margin-right": "22px",
             }}
           />
         </PianoRollScrollZoomViewPort>

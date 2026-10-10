@@ -1,0 +1,92 @@
+/*
+ * The zoom sliders. Themed like the rest of the roll (see PianoRoll.module.css):
+ *   --pianoroll-slider-track    the groove
+ *   --pianoroll-slider-fill     the groove up to the thumb
+ *   --pianoroll-slider-thumb    the handle
+ *   --pianoroll-slider-size     the handle's diameter (the groove is a third of it)
+ */
+.ZoomSlider {
+  --size: var(--pianoroll-slider-size, 14px);
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.horizontal {
+  height: calc(var(--size) + 8px);
+  padding: 0 calc(var(--size) / 2);
+}
+
+.vertical {
+  width: calc(var(--size) + 8px);
+  padding: calc(var(--size) / 2) 0;
+  align-self: stretch;
+}
+
+.track {
+  position: relative;
+  border-radius: 999px;
+  background: var(--pianoroll-slider-track, #3a3f4b);
+}
+
+.horizontal .track {
+  width: 100%;
+  height: calc(var(--size) / 3);
+}
+
+.vertical .track {
+  height: 100%;
+  width: calc(var(--size) / 3);
+}
+
+.fill {
+  position: absolute;
+  border-radius: inherit;
+  background: var(--pianoroll-slider-fill, #6b7280);
+}
+
+.horizontal .fill {
+  left: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.vertical .fill {
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.thumb {
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: var(--pianoroll-slider-thumb, #d1d5db);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.horizontal .thumb {
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.vertical .thumb {
+  left: 50%;
+  transform: translate(-50%, 50%);
+}
+
+.ZoomSlider:focus-visible .thumb {
+  outline: 2px solid var(--pianoroll-slider-fill, #6b7280);
+  outline-offset: 2px;
+}
+
+.disabled {
+  opacity: 0.35;
+  cursor: default;
+}
