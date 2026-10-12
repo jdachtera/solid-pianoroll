@@ -1,4 +1,4 @@
-import { Accessor, createEffect, createSignal } from "solid-js";
+import { Accessor, createEffect, createSignal, onCleanup } from "solid-js";
 
 export type ClientRect = Omit<DOMRect, "toJSON">;
 
@@ -29,9 +29,9 @@ export default function useBoundingClientRect(containerRef: Accessor<HTMLElement
 
     updateBoundingClientRect();
 
-    return () => {
-      resizeObserver.disconnect();
-    };
+    // Solid ignores an effect's return value, so a returned cleanup never ran
+    // and each re-run (or unmount) left its observer connected.
+    onCleanup(() => resizeObserver.disconnect());
   });
 
   return boundingClientRect;
