@@ -1,4 +1,4 @@
-import { createMemo, createSignal, For, Ref, Show } from "solid-js";
+import { createMemo, createSignal, For, Index, Ref, Show } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
 import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
 import styles from "./PianoRollNotes.module.css";
@@ -315,21 +315,25 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
       onPointerUp={cancelLongPress}
       onPointerCancel={cancelLongPress}
     >
-      <For each={context.tracks}>
+      {/* Tracks by index, notes by identity. Every edit hands in a new track
+          object, so keyed by reference the edited track's whole subtree was
+          torn down and rebuilt on each drag frame. By index the track slot
+          stays, and the notes' own <For> recreates only the note that changed. */}
+      <Index each={context.tracks}>
         {(track, trackIndex) => {
           return (
             <Show
               when={
-                trackIndex() === context.selectedTrackIndex ||
+                trackIndex === context.selectedTrackIndex ||
                 context.showAllTracks ||
                 context.mode === "tracks"
               }
             >
-              <For each={track.notes}>
+              <For each={track().notes}>
                 {(note, noteIndex) => {
                   const verticalVirtualDimensions = createMemo(() =>
                     verticalViewPort().calculatePixelDimensions(
-                      context.mode === "keys" ? 127 - note.midi : trackIndex(),
+                      context.mode === "keys" ? 127 - note.midi : trackIndex,
                       1,
                     ),
                   );
@@ -363,7 +367,7 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
                         onDblClick={(event) => {
                           if (!editable()) return;
                           event.stopPropagation();
-                          context.onRemoveNote?.(trackIndex(), noteIndex());
+                          context.onRemoveNote?.(trackIndex, noteIndex());
                         }}
                         onPointerDown={(event) => {
                           if (!editable()) return;
@@ -387,7 +391,7 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
                           setDiffMidi(midiAtPointer(event) - note.midi);
                           setIsDragging(true);
                           setCurrentNoteIndex(noteIndex());
-                          setCurrentNoteTrackIndex(trackIndex());
+                          setCurrentNoteTrackIndex(trackIndex);
                           setInitialNote(note);
 
                           // The touch equivalent of double-clicking a note. The
@@ -397,7 +401,7 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
                           if (event.pointerType !== "mouse")
                             startLongPress(event, () => {
                               stopDragging();
-                              context.onRemoveNote?.(trackIndex(), noteIndex());
+                              context.onRemoveNote?.(trackIndex, noteIndex());
                             });
 
                           startDragging();
@@ -405,7 +409,7 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
                         onPointerUp={cancelLongPress}
                         onPointerCancel={cancelLongPress}
                         style={{
-                          "background-color": `${track.color}`,
+                          "background-color": `${track().color}`,
 
                           opacity: (note.velocity / 128 + 2) / 3,
 
@@ -423,7 +427,7 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
             </Show>
           );
         }}
-      </For>
+      </Index>
     </div>
   );
 };
