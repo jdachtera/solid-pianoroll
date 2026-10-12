@@ -2,6 +2,8 @@ import { createEffect, createRoot } from "solid-js";
 import { isServer } from "solid-js/web";
 import { describe, expect, it } from "vitest";
 import { createPianoRollstate, useNotes } from "../src";
+import { builtInNoteEditors, createNoteEditors } from "../src/usePianoRollState";
+import type { Track } from "../src";
 import type { Note } from "../src";
 
 const note = (ticks: number, midi = 60): Note => ({
@@ -173,6 +175,43 @@ describe("state", () => {
       const second = createPianoRollstate();
       first.onNoteDown(0, 60);
       expect(second.isKeyDown(0, 60)).toBe(false);
+      dispose();
+    }));
+});
+
+describe("note editors", () => {
+  const track = (notes: Note[]): Track => ({ name: "t", color: "#000", notes });
+
+  it("appends a note that comes after every other one", () => {
+    let tracks = [track([note(0), note(480)])];
+    const editors = createNoteEditors(
+      () => tracks,
+      (next) => (tracks = next),
+    );
+    expect(editors.onInsertNote(0, note(960))).toBe(2);
+    expect(tracks[0]?.notes.map(({ ticks }) => ticks)).toEqual([0, 480, 960]);
+  });
+
+  it("sends edits to whatever tracks and handler they are bound to", () => {
+    let tracks = [track([note(0)])];
+    const changes: Track[][] = [];
+    const editors = createNoteEditors(
+      () => tracks,
+      (next) => {
+        changes.push(next);
+        tracks = next;
+      },
+    );
+    editors.onRemoveNote(0, 0);
+    expect(changes).toHaveLength(1);
+    expect(tracks[0]?.notes).toEqual([]);
+  });
+
+  it("marks the state hook's own editors so <PianoRoll> can rebind them", () =>
+    createRoot((dispose) => {
+      const state = createPianoRollstate();
+      expect(builtInNoteEditors.has(state.onNoteChange)).toBe(true);
+      expect(builtInNoteEditors.has(() => {})).toBe(false);
       dispose();
     }));
 });

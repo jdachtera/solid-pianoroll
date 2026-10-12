@@ -8,7 +8,7 @@ import PianoRollNotes from "./PianoRollNotes";
 import PianoRollGrid from "./PianoRollGrid";
 import ZoomSliderControl from "./viewport/ZoomSliderControl";
 import PianoRollTrackList from "./PianoRollTrackList";
-import createPianoRollstate from "./usePianoRollState";
+import createPianoRollstate, { builtInNoteEditors, createNoteEditors } from "./usePianoRollState";
 import PianoRollScrollZoomViewPort, { SCALE_HEIGHT } from "./PianoRollScrollZoomViewPort";
 import PianoRollNotesScroller from "./PianoRollNotesScroller";
 import PianoRollTrackListScroller from "./PianoRollTrackListScroller";
@@ -37,7 +37,28 @@ export type PianoRollProps = {
 
 const PianoRoll = (allProps: ParentProps<PianoRollProps>) => {
   const propsWithDefaults = mergeProps({ showAllTracks: false }, allProps);
-  const [context, divProps] = splitContextProps(propsWithDefaults);
+  const [contextProps, divProps] = splitContextProps(propsWithDefaults);
+
+  // Note edits go to the tracks and onTracksChange this roll was given. Only
+  // the built-in editors are rebound: a caller's own onNoteChange & co. stay.
+  const editors = createNoteEditors(
+    () => contextProps.tracks,
+    (tracks) => contextProps.onTracksChange(tracks),
+  );
+  const editor = <Name extends keyof typeof editors>(name: Name) =>
+    builtInNoteEditors.has(contextProps[name]) ? editors[name] : contextProps[name];
+
+  const context = mergeProps(contextProps, {
+    get onNoteChange() {
+      return editor("onNoteChange");
+    },
+    get onInsertNote() {
+      return editor("onInsertNote");
+    },
+    get onRemoveNote() {
+      return editor("onRemoveNote");
+    },
+  });
 
   return (
     <PianoRollContextProvider value={context}>

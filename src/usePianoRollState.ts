@@ -112,53 +112,10 @@ const createPianoRollstate = (
     );
   };
 
-  const updateNotes = async (trackIndex: number, getNotes: (notes: Note[]) => Note[]) => {
-    const track = state.tracks[trackIndex];
-    if (!track) return;
-
-    const notes = track.notes;
-
-    handlers.onTracksChange([
-      ...state.tracks.slice(0, trackIndex),
-      { ...track, notes: getNotes(notes) },
-      ...state.tracks.slice(trackIndex + 1),
-    ]);
-  };
-
-  const onNoteChange = (trackIndex: number, noteIndex: number, note: Note) => {
-    updateNotes(trackIndex, (notes) => [
-      ...notes.slice(0, noteIndex),
-      note,
-      ...notes.slice(noteIndex + 1),
-    ]);
-  };
-
-  const onInsertNote = (trackIndex: number, note: Note) => {
-    const track = state.tracks[trackIndex];
-    if (!track) return -1;
-
-    const notes = track.notes;
-
-    const newNoteIndex = Math.max(
-      notes.findIndex(({ ticks }) => ticks > note.ticks),
-      0,
-    );
-
-    updateNotes(trackIndex, (notes) => [
-      ...notes.slice(0, newNoteIndex),
-      note,
-      ...notes.slice(newNoteIndex),
-    ]);
-
-    return newNoteIndex;
-  };
-
-  const onRemoveNote = (trackIndex: number, noteIndex: number) => {
-    updateNotes(trackIndex, (notes) => [
-      ...notes.slice(0, noteIndex),
-      ...notes.slice(noteIndex + 1),
-    ]);
-  };
+  const { onNoteChange, onInsertNote, onRemoveNote } = createNoteEditors(
+    () => state.tracks,
+    (tracks) => handlers.onTracksChange(tracks),
+  );
 
   // How many sources are holding each key down, per track. Playback can sound
   // the same pitch twice with the notes overlapping, and the mouse can play a
@@ -223,6 +180,69 @@ const createPianoRollstate = (
     onPlayheadPositionChange,
   });
 };
+
+/** The note edits, written against whichever tracks and change handler they
+    are given. The state hook binds them to its own store; <PianoRoll> binds
+    them again to the tracks and onTracksChange it was actually passed, so a
+    caller overriding onTracksChange as a prop is the one that hears about
+    edits. Bound to the store alone, a prop override was silently skipped. */
+export const createNoteEditors = (
+  getTracks: () => Track[],
+  setTracks: (tracks: Track[]) => void,
+) => {
+  const updateNotes = (trackIndex: number, getNotes: (notes: Note[]) => Note[]) => {
+    const tracks = getTracks();
+    const track = tracks[trackIndex];
+    if (!track) return;
+
+    setTracks([
+      ...tracks.slice(0, trackIndex),
+      { ...track, notes: getNotes(track.notes) },
+      ...tracks.slice(trackIndex + 1),
+    ]);
+  };
+
+  const editors = {
+    onNoteChange: (trackIndex: number, noteIndex: number, note: Note) => {
+      updateNotes(trackIndex, (notes) => [
+        ...notes.slice(0, noteIndex),
+        note,
+        ...notes.slice(noteIndex + 1),
+      ]);
+    },
+
+    onInsertNote: (trackIndex: number, note: Note) => {
+      const track = getTracks()[trackIndex];
+      if (!track) return -1;
+
+      // After every existing note findIndex finds nothing; that is the end of
+      // the track, not its start.
+      const firstLater = track.notes.findIndex(({ ticks }) => ticks > note.ticks);
+      const newNoteIndex = firstLater === -1 ? track.notes.length : firstLater;
+
+      updateNotes(trackIndex, (notes) => [
+        ...notes.slice(0, newNoteIndex),
+        note,
+        ...notes.slice(newNoteIndex),
+      ]);
+
+      return newNoteIndex;
+    },
+
+    onRemoveNote: (trackIndex: number, noteIndex: number) => {
+      updateNotes(trackIndex, (notes) => [
+        ...notes.slice(0, noteIndex),
+        ...notes.slice(noteIndex + 1),
+      ]);
+    },
+  };
+
+  Object.values(editors).forEach((editor) => builtInNoteEditors.add(editor));
+  return editors;
+};
+
+/** The editors createNoteEditors made, as opposed to a caller's own. */
+export const builtInNoteEditors = new WeakSet<Function>();
 
 type Entries<T> = {
   [K in keyof T]: [K, T[K]];
