@@ -60,7 +60,23 @@ const ScrollZoomContainer = (
   };
 
   const handleWheel = (event: WheelEvent & { currentTarget: Element }) => {
-    if (event.altKey) {
+    if (event.ctrlKey) {
+      // A trackpad pinch. Chrome, Edge and Firefox deliver it as a wheel event
+      // with ctrlKey set, so the page can zoom its own content instead of the
+      // browser zooming the page. It carries one scalar (deltaY) rather than a
+      // spread per axis, so both axes zoom together, anchored on the pointer.
+      // A real Ctrl+wheel lands here too and does the same, which is what it
+      // would mean on a roll anyway.
+      event.preventDefault();
+      const factor = Math.exp(-event.deltaY * 0.01);
+
+      for (const [viewPort, pixel] of [
+        [horizontalViewPort(), event.clientX],
+        [verticalViewPort(), event.clientY],
+      ] as const) {
+        zoomAnchored(viewPort, viewPort.zoom * factor, pixel, viewPort.calculatePosition(pixel));
+      }
+    } else if (event.altKey) {
       // Modifier zooms the axis under the dominant delta, anchored on the pointer:
       // the value under the cursor stays put (matching the waveform). Plain wheel
       // (no modifier) falls through to native scroll, which pans time (X) + pitch
@@ -106,7 +122,17 @@ const ScrollZoomContainer = (
    * previous move, so a slow pinch cannot accumulate rounding drift. */
   const activePointers = new Map<number, { x: number; y: number }>();
 
-  type PinchStart = { horizontalSpread: number; verticalSpread: number; horizontalZoom: number; verticalZoom: number };
+  type PinchStart = {
+    horizontalSpread: number;
+    verticalSpread: number;
+    horizontalZoom: number;
+    verticalZoom: number;
+    /** The values under the fingers' midpoint when the pinch began. They stay
+        under the midpoint wherever it goes, so moving both fingers together
+        pans the roll — a two-finger drag is a pinch with a constant spread. */
+    horizontalAnchor: number;
+    verticalAnchor: number;
+  };
   let pinchStart: PinchStart | undefined;
 
   // Below this the fingers are close enough that the spread ratio is mostly
@@ -134,23 +160,32 @@ const ScrollZoomContainer = (
       verticalSpread: Math.max(spread.verticalSpread, minimumSpreadPx),
       horizontalZoom: horizontalViewPort().zoom,
       verticalZoom: verticalViewPort().zoom,
+      horizontalAnchor: horizontalViewPort().calculatePosition(spread.midX),
+      verticalAnchor: verticalViewPort().calculatePosition(spread.midY),
     };
   };
 
-  /** Zoom one axis to `newZoom`, keeping the value currently under `pixel`
-      under it afterwards. */
+  /** Zoom one axis to `newZoom` and put `anchor` (a value on that axis) under
+      `pixel`. Anchoring on the value from the START of the gesture, rather than
+      whatever is under the pixel now, is what lets the same call pan: with the
+      current value it could only ever keep the view where it already was. */
   const zoomAnchored = (
     viewPort: ReturnType<typeof useViewPortDimension>,
     newZoom: number,
     pixel: number,
+    anchor: number,
   ) => {
     if (!Number.isFinite(newZoom) || newZoom <= 0) return;
 
-    const valueAtPointer = viewPort.calculatePosition(pixel);
+    // Clamped here rather than left to the axis: the position below is worked
+    // out from this zoom, so a zoom the axis then refused would leave the
+    // anchor drifting away from the fingers at either limit.
+    newZoom = Math.min(Math.max(newZoom, viewPort.minZoom ?? 0), viewPort.maxZoom ?? Infinity);
+
     const fraction = (pixel - viewPort.pixelOffset) / viewPort.pixelSize;
 
     viewPort.onZoomChange?.(newZoom);
-    viewPort.onPositionChange?.(valueAtPointer - fraction * (viewPort.range / newZoom));
+    viewPort.onPositionChange?.(anchor - fraction * (viewPort.range / newZoom));
   };
 
   const handlePointerDown = (event: PointerEvent) => {
@@ -178,12 +213,14 @@ const ScrollZoomContainer = (
       (pinchStart.horizontalZoom * Math.max(spread.horizontalSpread, minimumSpreadPx)) /
         pinchStart.horizontalSpread,
       spread.midX,
+      pinchStart.horizontalAnchor,
     );
     zoomAnchored(
       verticalViewPort(),
       (pinchStart.verticalZoom * Math.max(spread.verticalSpread, minimumSpreadPx)) /
         pinchStart.verticalSpread,
       spread.midY,
+      pinchStart.verticalAnchor,
     );
   };
 
