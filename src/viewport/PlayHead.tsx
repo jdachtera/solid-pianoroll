@@ -37,13 +37,16 @@ const PlayHead = (
       style={{
         position: "absolute",
         height: "100%",
-        width: "var(--pianoroll-playhead-width, 2px)",
+        // The border-box width has to include both 10px borders: without them a
+        // 2px border-box leaves a 0px padding box, and the clipped background
+        // below then paints nothing at all.
+        width: "calc(var(--pianoroll-playhead-width, 2px) + 20px)",
         left: `${leftPosition()}px`,
         "background-color": "var(--pianoroll-playhead, green)",
         cursor: "pointer",
         // The line is 2px because that is how wide a playhead should LOOK. A
         // finger cannot hit 2px, so the touch target is widened either side
-        // without widening the mark: the padding is transparent, the border-box
+        // without widening the mark: the borders are transparent, the clip
         // keeps the drawn line where it was, and touch-action hands the gesture
         // to the drag instead of to the scroller underneath.
         "box-sizing": "border-box",
