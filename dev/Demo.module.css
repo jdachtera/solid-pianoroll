@@ -1,22 +1,514 @@
-form label {
-  text-align: left;
-  display: inline-block;
-  width: 200px;
+:root {
+  --bg: #0e0f13;
+  --panel: #16181f;
+  --panel-2: #1c1f28;
+  --border: #262a35;
+  --text: #e6e8ef;
+  --muted: #8b90a0;
+  --accent: #6ea8fe;
+  --accent-2: #4f8cff;
+  --radius: 12px;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.Demo {
-  display: flex;
+.App {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 20px 24px 14px;
+  color: var(--text);
   height: 100vh;
-  margin: 0;
+  box-sizing: border-box;
+  display: flex;
   flex-direction: column;
+  gap: 16px;
   overflow: hidden;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Full-height dashboard: roll on the left, controls + tracks in a sidebar */
+.board {
+  flex: 1;
+  display: flex;
+  gap: 16px;
+  min-height: 0;
+}
+
+.boardMain {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.boardSide {
+  flex: 1;
+  min-width: 320px;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.panelRoll {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.panelTracks {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tableWrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+@media (max-width: 900px), (max-height: 620px) {
+  .App {
+    height: auto;
+    overflow: visible;
+    padding: 16px;
+  }
+  .board {
+    flex-direction: column;
+  }
+  .boardSide {
+    min-width: 0;
+    max-width: none;
+  }
+  .panelRoll {
+    height: 70vh;
+    min-height: 360px;
+  }
+}
+
+.title {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(90deg, #fff, var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  overflow: hidden;
+}
+
+.sectionTitle {
+  margin: 0 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.transport {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.transportTime {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 14px;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.control > label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.checks {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+}
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.urlRow {
+  flex-direction: row;
+}
+
+.urlRow input {
+  flex: 1;
+  min-width: 0;
+}
+
+input:not([type]),
+input[type="text"],
+select {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--accent);
+}
+
+input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.button {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.button:hover {
+  background: #242834;
+  border-color: #333949;
+}
+
+.primary {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+  color: #fff;
+  min-width: 96px;
+}
+
+.primary:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.fileButton {
+  text-align: center;
+  border-style: dashed;
+  color: var(--muted);
+}
+
+.fileButton:hover {
+  color: var(--text);
+}
+
+.fileButton input {
+  display: none;
+}
+
+.iconButton {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.iconButton:hover {
+  background: #242834;
+  border-color: #333949;
+}
+
+/* Segmented toggle */
+.segmented {
+  display: flex;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.seg {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--muted);
+  padding: 6px 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  transition: background 0.15s, color 0.15s;
+}
+
+.seg:hover {
+  color: var(--text);
+}
+
+.segActive,
+.segActive:hover {
+  background: var(--accent-2);
+  color: #fff;
+}
+
+/* Tracks table */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.row {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.row:hover {
+  background: var(--panel-2);
+}
+
+.rowSelected,
+.rowSelected:hover {
+  background: rgba(79, 140, 255, 0.16);
+}
+
+.trackName {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  vertical-align: middle;
+}
+
+.empty {
+  color: var(--muted);
+  font-size: 14px;
+  padding: 8px 0;
+}
+
+.hint {
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Panel header (title + meta on one row) */
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.panelTitle {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.panelMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.metaSep {
+  opacity: 0.5;
+}
+
+.time {
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--text);
+}
+
+.timeMuted {
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--muted);
+}
+
+/* Roll stage: rounded frame. Without .themeDark the roll draws its own
+   defaults, which is what "Classic" shows. */
+.stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #ccc;
+  color: #111;
+}
+
+.stagePlaceholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 14px;
+  background: repeating-linear-gradient(-45deg, #0b0c10, #0b0c10 12px, #101218 12px, #101218 24px);
+}
+
+/* The roll's theming contract: every colour it draws is a --pianoroll-*
+   variable, so setting them on any ancestor restyles it. */
+.themeDark {
+  background: #0b0c10;
+  color: var(--text);
+
+  --pianoroll-grid-background: #12141a;
+  --pianoroll-grid-highlight: #181b23;
+  --pianoroll-grid-line: #1d2029;
+  --pianoroll-grid-line-strong: #2e3341;
+  --pianoroll-grid-row-line: #1d2029;
+  --pianoroll-grid-row-shade: rgba(0, 0, 0, 0.35);
+
+  --pianoroll-scale-background: #16181f;
+  --pianoroll-scale-highlight: #1c1f28;
+  --pianoroll-scale-label: #8b90a0;
+  --pianoroll-scale-line: #2a2e3a;
+  --pianoroll-scale-line-strong: #454b5c;
+  --pianoroll-scale-underline: #262a35;
+
+  --pianoroll-keys-background: #0b0c10;
+  --pianoroll-key-white: #d9dce5;
+  --pianoroll-key-black: #1c1f28;
+  --pianoroll-key-line: #0b0c10;
+  --pianoroll-key-down: var(--accent);
+
+  --pianoroll-note-border: rgba(0, 0, 0, 0.55);
+  --pianoroll-note-radius: 3px;
+  --pianoroll-playhead: #ffcf5c;
+
+  --pianoroll-slider-track: #262a35;
+  --pianoroll-slider-fill: var(--accent-2);
+  --pianoroll-slider-thumb: #e6e8ef;
+
+  --pianoroll-track-background: #16181f;
+  --pianoroll-track-selected: #232a3d;
+  --pianoroll-track-line: #262a35;
+  --pianoroll-track-label: #e6e8ef;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-top: 8px;
+  font-size: 13px;
+}
+
+.link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.footerMuted {
+  margin-left: auto;
+  color: var(--muted);
 }
