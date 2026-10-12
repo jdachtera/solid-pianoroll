@@ -67,3 +67,55 @@
   flex: 1;
   height: 100%;
 }
+
+/* Keys / tracks switch, in the 30px strip above the left column. It sits in
+   line with the time scale, so it takes the scale's colours. */
+.ModeBar {
+  box-sizing: border-box;
+  height: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  background: var(--pianoroll-scale-background, #777);
+  border-right: 1px solid var(--pianoroll-track-line, #000);
+  border-bottom: 1px solid var(--pianoroll-scale-underline, #333);
+}
+
+.ModeToggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 6px;
+  background: var(--pianoroll-scale-highlight, #666);
+}
+
+.ModeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--pianoroll-scale-label, #ccc);
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity 0.15s, background-color 0.15s;
+}
+
+.ModeButton:hover {
+  opacity: 1;
+}
+
+.ModeButton.active {
+  opacity: 1;
+  background: var(--pianoroll-scale-background, #777);
+}
+
+.ModeButton:focus-visible {
+  outline: 1px solid var(--pianoroll-scale-label, #ccc);
+  outline-offset: 1px;
+}
