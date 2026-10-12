@@ -1,7 +1,7 @@
 import { createRoot } from "solid-js";
 import { isServer } from "solid-js/web";
 import { describe, expect, it } from "vitest";
-import { useNotes } from "../src";
+import { createPianoRollstate, useNotes } from "../src";
 import type { Note } from "../src";
 
 const note = (ticks: number, midi = 60): Note => ({
@@ -97,6 +97,17 @@ describe("useNotes", () => {
 
       expect(original.map((n) => n.ticks)).toEqual(snapshot);
       expect(notes()).not.toBe(original);
+      dispose();
+    }));
+});
+
+describe("state", () => {
+  it("does not share pressed keys between rolls", () =>
+    createRoot((dispose) => {
+      const first = createPianoRollstate();
+      const second = createPianoRollstate();
+      first.onNoteDown(0, 60);
+      expect(second.isKeyDown(0, 60)).toBe(false);
       dispose();
     }));
 });

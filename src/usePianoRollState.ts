@@ -72,6 +72,12 @@ const createPianoRollstate = (
 ) => {
   const [state, setState] = createStore<PianoRollState>({
     ...defaultState,
+    // Fresh objects per roll. The store merges object writes into the object
+    // already there, so sharing defaultState's own would have every roll on the
+    // page (and every test) writing into the same pressedKeys and client rects.
+    pressedKeys: {},
+    notesScrollerClientRect: { ...defaultState.notesScrollerClientRect },
+    tracksScrollerClientRect: { ...defaultState.tracksScrollerClientRect },
     ...initialState,
   });
 
