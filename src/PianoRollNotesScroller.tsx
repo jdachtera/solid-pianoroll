@@ -1,7 +1,7 @@
 import { createEffect, createSignal, ParentProps } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
 import useBoundingClientRect from "./useBoundingClientRect";
-import ScrollZoomContainer from "./viewport/ScrollZoomContainer";
+import { ScrollContainer } from "solid-viewport";
 import { SCALE_HEIGHT } from "./PianoRollScrollZoomViewPort";
 
 const PianoRollNotesScroller = (props: ParentProps) => {
@@ -15,14 +15,17 @@ const PianoRollNotesScroller = (props: ParentProps) => {
   });
 
   return (
-    <ScrollZoomContainer
+    <ScrollContainer
       ref={setRef}
-      verticalDimensionName={context.mode === "keys" ? "vertical" : "verticalTracks"}
+      verticalAxis={context.mode === "keys" ? "vertical" : "verticalTracks"}
       // The time scale sits above the notes inside this scroller.
       verticalInset={SCALE_HEIGHT}
+      nativeScrollbars
+      pinch={context.pinchZoom}
+      style={{ "z-index": 4 }}
     >
       {props.children}
-    </ScrollZoomContainer>
+    </ScrollContainer>
   );
 };
 

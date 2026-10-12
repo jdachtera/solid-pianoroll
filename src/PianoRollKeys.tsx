@@ -1,12 +1,11 @@
 import styles from "./PianoRollKeys.module.css";
 import { createEffect, createMemo, createSignal, Index, Show } from "solid-js";
-import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
+import { ScrollContainer, useAxis } from "solid-viewport";
 import { usePianoRollContext } from "./PianoRollContext";
-import ScrollZoomContainer from "./viewport/ScrollZoomContainer";
 
 const PianoRollKeys = () => {
-  const verticalViewPort = createMemo(() => useViewPortDimension("vertical"));
-  const horizontalViewPort = createMemo(() => useViewPortDimension("horizontalKeys"));
+  const verticalViewPort = createMemo(() => useAxis("vertical"));
+  const horizontalViewPort = createMemo(() => useAxis("horizontalKeys"));
   const [isMouseDown, setIsMouseDown] = createSignal(false);
   const context = usePianoRollContext();
 
@@ -26,14 +25,14 @@ const PianoRollKeys = () => {
 
   return (
     <div class={styles.PianoRollKeys} style={{ width: `${horizontalViewPort().pixelSize}px` }}>
-      <ScrollZoomContainer horizontalDimensionName="horizontalKeys" showScrollbar={false}>
+      <ScrollContainer horizontalAxis="horizontalKeys" style={{ "z-index": 4 }}>
         <Index each={keys}>
           {(key) => {
             const isDown = createMemo(() =>
               context.isKeyDown(context.selectedTrackIndex, key().number),
             );
             const virtualDimensions = createMemo(() =>
-              verticalViewPort().calculatePixelDimensions(127 - key().number, 1),
+              verticalViewPort().dimensions(127 - key().number, 1),
             );
 
             const previousIsBlack = blackKeys.includes((key().number - 1) % 12);
@@ -90,7 +89,7 @@ const PianoRollKeys = () => {
             );
           }}
         </Index>
-      </ScrollZoomContainer>
+      </ScrollContainer>
     </div>
   );
 };

@@ -1,16 +1,16 @@
 import { createMemo } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
-import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
+import { useAxis } from "solid-viewport";
 
 const usePianoRollGrid = () => {
   const context = usePianoRollContext();
 
-  const horizontalViewPort = createMemo(() => useViewPortDimension("horizontal"));
+  const horizontalViewPort = createMemo(() => useAxis("horizontal"));
   const measureTicks = createMemo(() => context.ppq * 4);
   const selectedGridDivisorTicks = createMemo(() => measureTicks() / context.gridDivision);
 
   function calculateVisibleGridDivisorTicks(value: number): number {
-    const visibleRange = horizontalViewPort().calculateVisibleRange();
+    const visibleRange = horizontalViewPort().visibleRange();
 
     if (visibleRange <= 0) return 0;
 
@@ -30,9 +30,7 @@ const usePianoRollGrid = () => {
   );
 
   const gridArray = createMemo(() => {
-    const numberOfLines = Math.ceil(
-      horizontalViewPort().calculateVisibleRange() / gridDivisorTicks() + 1,
-    );
+    const numberOfLines = Math.ceil(horizontalViewPort().visibleRange() / gridDivisorTicks() + 1);
     const startIndex = Math.floor(context.position / gridDivisorTicks());
 
     return Array.from({ length: numberOfLines }).map((_, i) => {
@@ -52,7 +50,7 @@ const usePianoRollGrid = () => {
           Math.ceil(((index + 1) * selectedGridDivisorTicks()) / measureTicks()) % 2 === 0,
         hasHighlightedBorder: (index * gridDivisorTicks()) % selectedGridDivisorTicks() === 0,
         showLabel: ((index * selectedGridDivisorTicks()) / measureTicks()) % 2 === 0,
-        virtualDimensions: horizontalViewPort().calculatePixelDimensions(ticks, gridDivisorTicks()),
+        virtualDimensions: horizontalViewPort().dimensions(ticks, gridDivisorTicks()),
         label,
       };
     });

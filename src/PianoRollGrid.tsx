@@ -1,7 +1,7 @@
 import { createMemo, Index, Show } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
 import { blackKeys, keys } from "./PianoRollKeys";
-import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
+import { useAxis } from "solid-viewport";
 import styles from "./PianoRollGrid.module.css";
 import usePianoRollGrid from "./usePianoRollGrid";
 
@@ -9,9 +9,9 @@ const PianoRollGrid = () => {
   const context = usePianoRollContext();
 
   const verticalViewPort = createMemo(() =>
-    useViewPortDimension(context.mode === "keys" ? "vertical" : "verticalTracks"),
+    useAxis(context.mode === "keys" ? "vertical" : "verticalTracks"),
   );
-  const horizontalViewPort = createMemo(() => useViewPortDimension("horizontal"));
+  const horizontalViewPort = createMemo(() => useAxis("horizontal"));
   const gridArray = usePianoRollGrid();
 
   return (
@@ -39,7 +39,7 @@ const PianoRollGrid = () => {
         <Index each={keys}>
           {(key) => {
             const virtualDimensions = createMemo(() =>
-              verticalViewPort().calculatePixelDimensions(127 - key().number, 1),
+              verticalViewPort().dimensions(127 - key().number, 1),
             );
 
             return (
@@ -66,9 +66,7 @@ const PianoRollGrid = () => {
       <Show when={context.mode === "tracks"}>
         <Index each={context.tracks}>
           {(track, index) => {
-            const virtualDimensions = createMemo(() =>
-              verticalViewPort().calculatePixelDimensions(index, 1),
-            );
+            const virtualDimensions = createMemo(() => verticalViewPort().dimensions(index, 1));
 
             return (
               <Show when={verticalViewPort().isVisible(virtualDimensions())}>

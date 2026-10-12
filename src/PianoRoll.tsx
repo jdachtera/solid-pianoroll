@@ -1,6 +1,7 @@
 import styles from "./PianoRoll.module.css";
 
 import { JSX, ParentProps, Show, mergeProps } from "solid-js";
+import type { Pinch } from "solid-viewport";
 
 import { PianoRollContextProvider, splitContextProps } from "./PianoRollContext";
 import PianoRollKeys from "./PianoRollKeys";
@@ -32,6 +33,9 @@ export type PianoRollProps = {
    * (which sounds notes through onNoteDown/onNoteUp rather than recording them).
    */
   readOnly?: boolean;
+  /** Which axes a pinch zooms, by touch or trackpad: true / "both" (default),
+   * "horizontal" (time only), "vertical" (pitch only), or false. */
+  pinchZoom?: Pinch;
 } & ReturnType<typeof createPianoRollstate> &
   Omit<JSX.IntrinsicElements["div"], "onDurationChange">;
 

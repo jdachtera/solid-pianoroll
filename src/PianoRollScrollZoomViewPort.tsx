@@ -1,9 +1,11 @@
 import { ParentProps } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
-import { ScrollZoomViewPort } from "./viewport/ScrollZoomViewPort";
+import { ViewPort } from "solid-viewport";
 
 /** The scale strip above the notes (PianoRoll.tsx). */
 export const SCALE_HEIGHT = 30;
+
+const FIXED_AXIS = { position: 0, range: 1, zoom: 1, pixelOffset: 0 };
 
 const PianoRollScrollZoomViewPort = (props: ParentProps) => {
   const zoomFactor = 500;
@@ -12,8 +14,8 @@ const PianoRollScrollZoomViewPort = (props: ParentProps) => {
   const notesHeight = () => Math.max(1, context.notesScrollerClientRect.height - SCALE_HEIGHT);
 
   return (
-    <ScrollZoomViewPort
-      dimensions={{
+    <ViewPort
+      axes={{
         horizontal: () => ({
           pixelOffset: context.notesScrollerClientRect.left,
           pixelSize: context.notesScrollerClientRect.width,
@@ -43,8 +45,9 @@ const PianoRollScrollZoomViewPort = (props: ParentProps) => {
           minZoom: 1,
           maxZoom: 10,
         }),
+        // Fixed axes: the track list and the keys never pan or zoom sideways.
         horizontalTracks: () => ({
-          pixelOffset: 0,
+          ...FIXED_AXIS,
           pixelSize: context.tracksScrollerClientRect.width,
         }),
         verticalTracks: () => ({
@@ -61,11 +64,11 @@ const PianoRollScrollZoomViewPort = (props: ParentProps) => {
           minZoom: 0.8,
           maxZoom: 3,
         }),
-        horizontalKeys: () => ({ pixelSize: 60 }),
+        horizontalKeys: () => ({ ...FIXED_AXIS, pixelSize: 60 }),
       }}
     >
       {props.children}
-    </ScrollZoomViewPort>
+    </ViewPort>
   );
 };
 

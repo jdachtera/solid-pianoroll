@@ -1,7 +1,8 @@
 import { createEffect, createRoot } from "solid-js";
 import { isServer } from "solid-js/web";
 import { describe, expect, it } from "vitest";
-import { createPianoRollstate, useNotes } from "../src";
+import { createPianoRollstate, PianoRoll, PlayHead, useNotes } from "../src";
+import { render } from "solid-js/web";
 import { builtInNoteEditors, createNoteEditors } from "../src/usePianoRollState";
 import type { Track } from "../src";
 import type { Note } from "../src";
@@ -214,4 +215,41 @@ describe("note editors", () => {
       expect(builtInNoteEditors.has(() => {})).toBe(false);
       dispose();
     }));
+});
+
+describe("<PianoRoll>", () => {
+  // jsdom lays nothing out and has no ResizeObserver; sizes simply stay 0.
+  globalThis.ResizeObserver ??= class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
+  Element.prototype.scrollTo ??= function () {};
+  Element.prototype.getBoundingClientRect = () =>
+    ({ left: 0, top: 0, right: 800, bottom: 600, width: 800, height: 600, x: 0, y: 0 } as DOMRect);
+
+  it("mounts with every axis and scroller wired up", () => {
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    let state!: ReturnType<typeof createPianoRollstate>;
+    const dispose = render(() => {
+      state = createPianoRollstate({ ppq: 480, duration: 1920 });
+      state.onTracksChange([{ name: "Piano", color: "#f00", notes: [note(0), note(480, 64)] }]);
+      return (
+        <PianoRoll {...state} showTrackList>
+          <PlayHead position={state.playHeadPosition} />
+        </PianoRoll>
+      );
+    }, host);
+
+    expect(host.querySelector("[title='C 3']")).not.toBeNull(); // a key
+    expect(host.textContent).toContain("Piano"); // the track list
+    expect(host.querySelector(".PlayHead")).not.toBeNull();
+
+    state.onModeChange("tracks");
+    expect(host.textContent).toContain("Piano");
+
+    dispose();
+    host.remove();
+  });
 });

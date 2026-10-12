@@ -1,7 +1,7 @@
 import { createEffect, createSignal, ParentProps } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
 import useBoundingClientRect from "./useBoundingClientRect";
-import ScrollZoomContainer from "./viewport/ScrollZoomContainer";
+import { ScrollContainer } from "solid-viewport";
 
 const PianoRollTrackListScroller = (props: ParentProps) => {
   const context = usePianoRollContext();
@@ -14,14 +14,15 @@ const PianoRollTrackListScroller = (props: ParentProps) => {
   });
 
   return (
-    <ScrollZoomContainer
+    <ScrollContainer
       ref={setRef}
-      horizontalDimensionName="horizontalTracks"
-      verticalDimensionName="verticalTracks"
-      showScrollbar={context.mode === "keys"}
+      horizontalAxis="horizontalTracks"
+      verticalAxis="verticalTracks"
+      nativeScrollbars={context.mode === "keys"}
+      style={{ "z-index": 4 }}
     >
       {props.children}
-    </ScrollZoomContainer>
+    </ScrollContainer>
   );
 };
 

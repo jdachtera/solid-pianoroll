@@ -1,8 +1,8 @@
 import { createMemo, createSignal, For, Index, Ref, Show } from "solid-js";
 import { usePianoRollContext } from "./PianoRollContext";
-import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
+import { useAxis } from "solid-viewport";
 import styles from "./PianoRollNotes.module.css";
-import { clamp } from "./viewport/createViewPortDimension";
+import { clamp } from "solid-viewport";
 import { Note } from "./types";
 
 type NoteDragMode = "trimStart" | "move" | "trimEnd" | undefined;
@@ -16,9 +16,9 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
   let layer: HTMLDivElement | undefined;
 
   const verticalViewPort = createMemo(() =>
-    useViewPortDimension(context.mode === "keys" ? "vertical" : "verticalTracks"),
+    useAxis(context.mode === "keys" ? "vertical" : "verticalTracks"),
   );
-  const horizontalViewPort = createMemo(() => useViewPortDimension("horizontal"));
+  const horizontalViewPort = createMemo(() => useAxis("horizontal"));
 
   const gridDivisionTicks = createMemo(() => (context.ppq * 4) / context.gridDivision);
 
@@ -71,12 +71,12 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
    *
    * 127 - row, matching the 127 - midi the render uses a few lines below. */
   const midiAtPointer = (event: PointerEvent) => {
-    const origin = verticalViewPort().calculatePixelDimensions(0, 1).offset;
-    const next = verticalViewPort().calculatePixelDimensions(1, 1).offset;
+    const origin = verticalViewPort().dimensions(0, 1).offset;
+    const next = verticalViewPort().dimensions(1, 1).offset;
     const rowHeight = next - origin;
 
     if (!layer || !Number.isFinite(rowHeight) || rowHeight === 0)
-      return Math.floor(128 - verticalViewPort().calculatePosition(event.clientY));
+      return Math.floor(128 - verticalViewPort().toPosition(event.clientY));
 
     const local = event.clientY - layer.getBoundingClientRect().top;
 
@@ -86,11 +86,9 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
   /** Which end of a note a press landed on, if either — the difference between
    *  dragging the note around and dragging its start or end. */
   const modeAt = (event: PointerEvent, note: Note): NoteDragMode => {
-    const relativeX = horizontalViewPort().calculatePixelValue(
-      horizontalViewPort().calculatePosition(event.clientX),
-    );
-    const noteStartX = horizontalViewPort().calculatePixelValue(note.ticks);
-    const noteEndX = horizontalViewPort().calculatePixelValue(note.ticks + note.durationTicks);
+    const relativeX = horizontalViewPort().toPixels(horizontalViewPort().toPosition(event.clientX));
+    const noteStartX = horizontalViewPort().toPixels(note.ticks);
+    const noteEndX = horizontalViewPort().toPixels(note.ticks + note.durationTicks);
     const zone = edgeZonePx(event.pointerType, noteEndX - noteStartX);
 
     return relativeX - noteStartX < zone
@@ -140,7 +138,7 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
     const targetTrackIndex =
       context.mode === "tracks"
         ? clamp(
-            Math.floor(verticalViewPort().calculatePosition(event.clientY)),
+            Math.floor(verticalViewPort().toPosition(event.clientY)),
             0,
             context.tracks.length - 1,
           )
@@ -149,11 +147,9 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
         : context.selectedTrackIndex;
 
     const midi =
-      context.mode === "keys"
-        ? midiAtPointer(event) - diffMidi()
-        : getInitialNote()?.midi ?? 60;
+      context.mode === "keys" ? midiAtPointer(event) - diffMidi() : getInitialNote()?.midi ?? 60;
 
-    const horiontalPosition = horizontalViewPort().calculatePosition(event.clientX);
+    const horiontalPosition = horizontalViewPort().toPosition(event.clientX);
 
     return {
       targetTrackIndex,
@@ -204,7 +200,6 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
 
     const previousTrackIndex = currentNoteTrackIndex();
     const previousNoteIndex = currentNoteIndex();
-
 
     if (targetTrackIndex === previousTrackIndex) {
       context.onNoteChange?.(previousTrackIndex, previousNoteIndex, updatedNote);
@@ -332,14 +327,14 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
               <For each={track().notes}>
                 {(note, noteIndex) => {
                   const verticalVirtualDimensions = createMemo(() =>
-                    verticalViewPort().calculatePixelDimensions(
+                    verticalViewPort().dimensions(
                       context.mode === "keys" ? 127 - note.midi : trackIndex,
                       1,
                     ),
                   );
 
                   const horizontalDimensions = createMemo(() =>
-                    horizontalViewPort().calculatePixelDimensions(note.ticks, note.durationTicks),
+                    horizontalViewPort().dimensions(note.ticks, note.durationTicks),
                   );
 
                   return (
@@ -379,9 +374,7 @@ const PianoRollNotes = (props: { ref?: Ref<HTMLDivElement | undefined> }) => {
                           const mode = modeAt(event, note);
                           setNoteDragMode(mode);
 
-                          const initialPosition = horizontalViewPort().calculatePosition(
-                            event.clientX,
-                          );
+                          const initialPosition = horizontalViewPort().toPosition(event.clientX);
 
                           setDiffPosition(
                             mode === "trimEnd"

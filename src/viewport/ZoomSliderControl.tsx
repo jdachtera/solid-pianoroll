@@ -1,6 +1,6 @@
 import { createMemo, mergeProps } from "solid-js";
 import { JSX } from "solid-js/jsx-runtime";
-import { useViewPortDimension } from "./ScrollZoomViewPort";
+import { useAxis } from "solid-viewport";
 import styles from "./ZoomSliderControl.module.css";
 
 /**
@@ -17,7 +17,7 @@ const ZoomSliderControl = (props: {
   style?: JSX.CSSProperties;
 }) => {
   const p = mergeProps({ orientation: "horizontal" as const }, props);
-  const dimension = createMemo(() => useViewPortDimension(p.dimensionName ?? p.orientation));
+  const dimension = createMemo(() => useAxis(p.dimensionName ?? p.orientation));
   const vertical = () => p.orientation === "vertical";
 
   const fraction = () => {

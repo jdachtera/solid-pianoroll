@@ -22,6 +22,9 @@ export default defineConfig({
       },
     },
   ],
+  // One Solid for the roll and any linked package (e.g. a local solid-viewport);
+  // two copies would each have their own context and reactivity.
+  resolve: { dedupe: ["solid-js"] },
   server: {
     port: 3000,
   },

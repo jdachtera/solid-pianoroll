@@ -1,17 +1,17 @@
 import styles from "./PianoRollTrackList.module.css";
 import { createMemo, Index, Show } from "solid-js";
-import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
+import { useAxis } from "solid-viewport";
 import { usePianoRollContext } from "./PianoRollContext";
 
 const PianoRollTrackList = () => {
-  const viewPort = createMemo(() => useViewPortDimension("verticalTracks"));
+  const viewPort = createMemo(() => useAxis("verticalTracks"));
   const context = usePianoRollContext();
 
   return (
     <div class={styles.PianoRollTrackList}>
       <Index each={context.tracks}>
         {(track, index) => {
-          const virtualDimensions = createMemo(() => viewPort().calculatePixelDimensions(index, 1));
+          const virtualDimensions = createMemo(() => viewPort().dimensions(index, 1));
 
           return (
             <Show when={virtualDimensions().size > 0}>

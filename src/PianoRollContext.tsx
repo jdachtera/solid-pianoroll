@@ -8,6 +8,7 @@ export type PianoRollContext = {
   showTrackList?: boolean;
   /** Display the notes, refuse to change them — see PianoRollProps. */
   readOnly?: boolean;
+  pinchZoom?: PianoRollProps["pinchZoom"];
 } & ReturnType<typeof createPianoRollstate>;
 
 const PianoRollContext = createContext<PianoRollContext>();
@@ -28,4 +29,5 @@ export const splitContextProps = (allProps: PianoRollProps) =>
     "showAllTracks",
     "showTrackList",
     "readOnly",
+    "pinchZoom",
   ]);

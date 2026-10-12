@@ -1,6 +1,5 @@
 import { createEffect, createMemo, JSX, splitProps } from "solid-js";
-import { clamp } from "./createViewPortDimension";
-import { useViewPortDimension } from "./ScrollZoomViewPort";
+import { clamp, useAxis } from "solid-viewport";
 
 const PlayHead = (
   allProps: {
@@ -17,7 +16,7 @@ const PlayHead = (
     "dimensionName",
   ]);
 
-  const viewPort = useViewPortDimension(props.dimensionName ?? "horizontal");
+  const viewPort = useAxis(props.dimensionName ?? "horizontal");
 
   createEffect(() => {
     if (!props.sync) return;
@@ -28,7 +27,7 @@ const PlayHead = (
     viewPort.onPositionChange?.(newPosition);
   });
 
-  const leftPosition = createMemo(() => viewPort.calculatePixelOffset(props.position));
+  const leftPosition = createMemo(() => viewPort.toPixelOffset(props.position));
 
   return (
     <div
@@ -61,7 +60,7 @@ const PlayHead = (
         event.preventDefault();
         event.stopPropagation();
         const handlePointerMove = (event: PointerEvent) => {
-          const newPosition = viewPort.calculatePosition(event.clientX);
+          const newPosition = viewPort.toPosition(event.clientX);
           props.onPositionChange?.(newPosition, event);
         };
         const handlePointerUp = () => {

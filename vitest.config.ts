@@ -17,6 +17,9 @@ export default defineConfig(({ mode }) => {
     ],
     test: {
       watch: false,
+      // Solid packages ship JSX/reactive code that has to share this Solid
+      // instance; run them through Vite rather than load them from Node.
+      deps: { inline: [/solid-viewport/] },
       isolate: !testSSR,
       env: {
         NODE_ENV: testSSR ? 'production' : 'development',
@@ -36,6 +39,7 @@ export default defineConfig(({ mode }) => {
           }),
     },
     resolve: {
+      dedupe: ['solid-js'],
       conditions: testSSR ? ['node'] : ['browser', 'development'],
     },
   }

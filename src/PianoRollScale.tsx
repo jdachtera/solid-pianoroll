@@ -1,16 +1,16 @@
 import { createMemo, Index, Show } from "solid-js";
-import { useViewPortDimension } from "./viewport/ScrollZoomViewPort";
+import { useAxis } from "solid-viewport";
 import styles from "./PianoRollScale.module.css";
 import usePianoRollGrid from "./usePianoRollGrid";
 import { usePianoRollContext } from "./PianoRollContext";
 
 const PianoRollScale = () => {
-  const horizontalViewPort = createMemo(() => useViewPortDimension("horizontal"));
+  const horizontalViewPort = createMemo(() => useAxis("horizontal"));
   const grid = usePianoRollGrid();
   const context = usePianoRollContext();
 
   const updatePlayheadPosition = (event: PointerEvent) => {
-    const position = horizontalViewPort().calculatePosition(event.clientX);
+    const position = horizontalViewPort().toPosition(event.clientX);
     context.onPlayHeadPositionChange(position, event);
   };
 
