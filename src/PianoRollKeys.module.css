@@ -17,7 +17,7 @@
      column that never needs to pan horizontally, so they can own the gesture
      outright. */
   touch-action: none;
-  transition-property: background-color, box-shadow;
+  transition-property: background-color;
   transition-duration: 200ms;
   transition-timing-function: ease-out;
   border-width: 0px;
@@ -27,8 +27,9 @@
   left: -20%;
   border-color: var(--pianoroll-key-line, #000);
   border-style: solid;
-  transform: rotateX(0deg);
-  perspective: 100px;
+  /* No 3D transform at rest: it gives every key a compositing layer of its
+     own, and a vertical zoom then re-rasterises all of them on every step.
+     Only the pressed key tilts (.down). */
 }
 
 .black {
@@ -51,5 +52,5 @@
 .down {
   transition: none;
   background: var(--pianoroll-key-down, red);
-  transform: rotateX(0deg) rotateY(20deg);
+  transform: perspective(100px) rotateY(20deg);
 }

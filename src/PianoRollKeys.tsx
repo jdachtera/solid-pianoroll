@@ -84,16 +84,10 @@ const PianoRollKeys = () => {
                       (!key().isBlack && nextIsBlack ? virtualDimensions().size / 2 : 0) +
                       (!key().isBlack && previousIsBlack ? virtualDimensions().size / 2 : 0)
                     }px`,
-                    "box-shadow":
-                      `0px 0px ${Math.min(virtualDimensions().size / 20, 1)}px ${Math.min(
-                        virtualDimensions().size / 50,
-                        1,
-                      )}px rgba(0, 0, 0, 0.5) ${key().isBlack ? "" : "inset"}` + isDown()
-                        ? `0px 0px ${Math.min(virtualDimensions().size / 8, 2)}px ${Math.min(
-                            virtualDimensions().size / 20,
-                            2,
-                          )}px rgba(0, 0, 0, 0.5) inset`
-                        : "",
+                    // A shadow only on the key being pressed. A blurred one on
+                    // every key, sized from its height, is re-rasterised on each
+                    // vertical zoom step, which is most of what a zoom costs.
+                    "box-shadow": isDown() ? "0px 0px 2px 1px rgba(0, 0, 0, 0.5) inset" : undefined,
                   }}
                 ></div>
               </Show>
