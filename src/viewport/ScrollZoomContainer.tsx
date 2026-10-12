@@ -11,6 +11,10 @@ const ScrollZoomContainer = (
       verticalDimensionName?: string;
       horizontalDimensionName?: string;
       showScrollbar?: boolean;
+      /** Pixels of fixed content inside the container above the vertical
+          axis's own area, such as the roll's time scale over its notes. The
+          visible box is the axis plus this, and the axis maps only its part. */
+      verticalInset?: number;
     } & JSX.IntrinsicElements["div"]
   >,
 ) => {
@@ -21,6 +25,7 @@ const ScrollZoomContainer = (
     "verticalDimensionName",
     "horizontalDimensionName",
     "showScrollbar",
+    "verticalInset",
   ]);
 
   const propsWithDefaults = mergeProps(
@@ -28,6 +33,7 @@ const ScrollZoomContainer = (
       verticalDimensionName: "vertical",
       horizontalDimensionName: "horizontal",
       showScrollbar: true,
+      verticalInset: 0,
     },
     ownProps,
   );
@@ -48,12 +54,16 @@ const ScrollZoomContainer = (
     const maxVerticalPosition = verticalViewPort().calculateMaxPosition();
     const maxPosition = horizontalViewPort().calculateMaxPosition();
 
-    const height = verticalViewPort().pixelSize;
-    const width = horizontalViewPort().pixelSize;
-    const { scrollTop, scrollLeft, scrollWidth, scrollHeight } = event.currentTarget;
+    // The scrollable distance on each axis, worked out exactly as the effect
+    // below lays it out, so a scroll and the position it was set from agree.
+    // Measured from the DOM it also counted the inset, and dragging to the
+    // bottom never reached the last rows.
+    const { scrollTop, scrollLeft } = event.currentTarget;
+    const verticalRange = (verticalViewPort().zoom - 1) * verticalViewPort().pixelSize;
+    const horizontalRange = (horizontalViewPort().zoom - 1) * horizontalViewPort().pixelSize;
 
-    const scrollTopAmount = scrollTop / (scrollHeight - height);
-    const scrollLeftAmount = scrollLeft / (scrollWidth - width);
+    const scrollTopAmount = verticalRange > 0 ? scrollTop / verticalRange : 0;
+    const scrollLeftAmount = horizontalRange > 0 ? scrollLeft / horizontalRange : 0;
 
     verticalViewPort().onPositionChange?.(maxVerticalPosition * scrollTopAmount);
     horizontalViewPort().onPositionChange?.(maxPosition * scrollLeftAmount);
@@ -254,7 +264,7 @@ const ScrollZoomContainer = (
 
     didUpdateScroll = true;
 
-    scrollContentRef.style.height = `${scrollDivHeight}px`;
+    scrollContentRef.style.height = `${scrollDivHeight + propsWithDefaults.verticalInset}px`;
     scrollContentRef.style.width = `${scrollDivWidth}px`;
 
     scrollContentRef.parentElement.scrollTo({
@@ -287,7 +297,7 @@ const ScrollZoomContainer = (
           style={{
             top: 0,
             left: 0,
-            height: `${verticalViewPort().pixelSize}px`,
+            height: `${verticalViewPort().pixelSize + propsWithDefaults.verticalInset}px`,
             width: `${horizontalViewPort().pixelSize}px`,
             position: "sticky",
             display: "flex",
@@ -296,7 +306,7 @@ const ScrollZoomContainer = (
           <div
             style={{
               position: "relative",
-              height: `${verticalViewPort().pixelSize}px`,
+              height: `${verticalViewPort().pixelSize + propsWithDefaults.verticalInset}px`,
               width: `${horizontalViewPort().pixelSize}px`,
             }}
           >
