@@ -4,20 +4,82 @@
   flex: 1;
 }
 
+/* One row per track: a stripe in the track's own colour (the same colour its
+   notes are drawn in), its number, its name and how many notes it holds. Rows
+   can be zoomed down to a few pixels, so everything sits on one centred line
+   and is clipped rather than wrapped. */
 .Track {
-  border-width: 0px;
   position: absolute;
   box-sizing: border-box;
   width: 100%;
-  border-color: var(--pianoroll-track-line, #000);
-  border-style: solid;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 0 12px;
+  overflow: hidden;
+  border: 0 solid var(--pianoroll-track-line, #000);
   border-right-width: 1px;
   border-bottom-width: 1px;
-  padding: 2px;
-  cursor: pointer;
   background: var(--pianoroll-track-background, lightgrey);
+  color: var(--pianoroll-track-label, inherit);
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.Track::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--track-color, currentColor);
+  opacity: 0.7;
+  transition: width 0.15s, opacity 0.15s;
+}
+
+.Track:hover {
+  background-image: linear-gradient(rgba(127, 127, 127, 0.12), rgba(127, 127, 127, 0.12));
 }
 
 .Track.selected {
   background: var(--pianoroll-track-selected, gray);
+}
+
+.Track.selected::before {
+  width: 6px;
+  opacity: 1;
+}
+
+.Number {
+  min-width: 1.5em;
+  opacity: 0.5;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.Name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.Track.selected .Name {
+  font-weight: 600;
+}
+
+.Name.unnamed {
+  font-style: italic;
+  opacity: 0.6;
+}
+
+.Count {
+  opacity: 0.5;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
 }

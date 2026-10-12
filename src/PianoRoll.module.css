@@ -30,7 +30,7 @@
  *   --pianoroll-slider-track         --pianoroll-slider-fill
  *   --pianoroll-slider-thumb         --pianoroll-slider-size
  *   --pianoroll-track-background     --pianoroll-track-selected
- *   --pianoroll-track-line
+ *   --pianoroll-track-line           --pianoroll-track-label
  */
 .PianoRoll {
   box-sizing: border-box;

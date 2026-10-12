@@ -24,10 +24,15 @@ const PianoRollTrackList = () => {
                 style={{
                   top: `${virtualDimensions().offset}px`,
                   height: `${virtualDimensions().size}px`,
+                  "--track-color": track().color,
                 }}
                 onClick={() => context.onSelectedTrackIndexChange?.(index)}
               >
-                {index} {track().name || "[unnamed track]"}
+                <span class={styles.Number}>{index + 1}</span>
+                <span classList={{ [styles.Name]: true, [styles.unnamed]: !track().name }}>
+                  {track().name || "Untitled"}
+                </span>
+                <span class={styles.Count}>{track().notes.length}</span>
               </div>
             </Show>
           );
