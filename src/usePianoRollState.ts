@@ -1,5 +1,5 @@
 import { mergeProps } from "solid-js";
-import { createStore } from "solid-js/store";
+import { createStore, unwrap } from "solid-js/store";
 import { GridDivision } from "./types";
 import { Note, Track } from "./types";
 import { ClientRect } from "./useBoundingClientRect";
@@ -160,22 +160,44 @@ const createPianoRollstate = (
     ]);
   };
 
-  const updateKeyPressedState = (trackIndex: number, keyNumber: number, value: boolean) => {
-    handlers.onPressedKeysChange?.({
-      ...state.pressedKeys,
-      [trackIndex]: {
-        ...state.pressedKeys[trackIndex],
-        [keyNumber]: value,
-      },
-    });
+  // How many sources are holding each key down, per track. Playback can sound
+  // the same pitch twice with the notes overlapping, and the mouse can play a
+  // key that playback is also holding; with a plain flag the first release
+  // lifted the key while the other was still sounding. Kept outside the store:
+  // nothing renders the count, only whether it is above zero.
+  const pressCounts = new Map<string, number>();
+
+  const updateKeyPressedState = (trackIndex: number, keyNumber: number, delta: 1 | -1) => {
+    const countKey = `${trackIndex}:${keyNumber}`;
+    // The store is the truth for down/up: if anyone has reset pressedKeys
+    // through onPressedKeysChange, a stale count must not keep a key down.
+    const isDown = !!state.pressedKeys[trackIndex]?.[keyNumber];
+    const count = Math.max(0, (isDown ? pressCounts.get(countKey) ?? 1 : 0) + delta);
+    pressCounts.set(countKey, count);
+
+    if (count > 0 === isDown) return;
+
+    // Written at the key's own path rather than as a rebuilt object: replacing
+    // pressedKeys[track] notified every key of that track on every note event,
+    // so each visible key re-checked itself to find that one other key changed.
+    if (!state.pressedKeys[trackIndex]) setState("pressedKeys", trackIndex, {});
+    setState("pressedKeys", trackIndex, keyNumber, count > 0);
+
+    // Callers have always been handed a new object per change; keep it that way
+    // rather than leak the store's own, which mutates in place.
+    const onPressedKeysChange = initialState?.onPressedKeysChange;
+    if (onPressedKeysChange) {
+      const pressedKeys = unwrap(state.pressedKeys);
+      onPressedKeysChange({ ...pressedKeys, [trackIndex]: { ...pressedKeys[trackIndex] } });
+    }
   };
 
   const onNoteDown = (trackIndex: number, keyNumber: number) => {
-    updateKeyPressedState(trackIndex, keyNumber, true);
+    updateKeyPressedState(trackIndex, keyNumber, 1);
   };
 
   const onNoteUp = (trackIndex: number, keyNumber: number) => {
-    updateKeyPressedState(trackIndex, keyNumber, false);
+    updateKeyPressedState(trackIndex, keyNumber, -1);
   };
 
   const isKeyDown = (trackIndex: number, keyNumber: number) =>

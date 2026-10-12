@@ -27,9 +27,6 @@
   left: -20%;
   border-color: var(--pianoroll-key-line, #000);
   border-style: solid;
-  /* No 3D transform at rest: it gives every key a compositing layer of its
-     own, and a vertical zoom then re-rasterises all of them on every step.
-     Only the pressed key tilts (.down). */
 }
 
 .black {
@@ -49,8 +46,33 @@
   border-bottom-right-radius: 4%;
 }
 
+/* The pressed look: a shade deepening toward the tip, as if the key had tipped
+   down under the finger, plus a soft inset edge. It was a real 3D tilt
+   (perspective + rotateY), but a 3D transform gives the key a compositing layer
+   of its own, so every note on and off built one and tore it down again, which
+   during playback is a steady churn of layers. A gradient is one repaint of one
+   key, and it looks almost the same at this size.
+
+   It lives on an overlay so that it can fade out on release with the colour
+   (a gradient itself cannot be transitioned), and snap in on press. */
+.Key::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent 35%, rgba(0, 0, 0, 0.3));
+  box-shadow: 0 0 2px 1px rgba(0, 0, 0, 0.5) inset;
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
 .down {
   transition: none;
   background: var(--pianoroll-key-down, red);
-  transform: perspective(100px) rotateY(20deg);
+}
+
+.down::after {
+  opacity: 1;
+  transition: none;
 }

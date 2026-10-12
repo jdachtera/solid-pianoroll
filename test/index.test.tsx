@@ -1,4 +1,4 @@
-import { createRoot } from "solid-js";
+import { createEffect, createRoot } from "solid-js";
 import { isServer } from "solid-js/web";
 import { describe, expect, it } from "vitest";
 import { createPianoRollstate, useNotes } from "../src";
@@ -97,6 +97,71 @@ describe("useNotes", () => {
 
       expect(original.map((n) => n.ticks)).toEqual(snapshot);
       expect(notes()).not.toBe(original);
+      dispose();
+    }));
+});
+
+describe("pressed keys", () => {
+  it("keeps a key down until every press on it is released", () =>
+    createRoot((dispose) => {
+      const state = createPianoRollstate();
+      state.onNoteDown(0, 60);
+      state.onNoteDown(0, 60);
+      state.onNoteUp(0, 60);
+      expect(state.isKeyDown(0, 60)).toBe(true);
+      state.onNoteUp(0, 60);
+      expect(state.isKeyDown(0, 60)).toBe(false);
+      dispose();
+    }));
+
+  it("ignores a release with no press, rather than owing one", () =>
+    createRoot((dispose) => {
+      const state = createPianoRollstate();
+      state.onNoteUp(0, 60);
+      state.onNoteDown(0, 60);
+      expect(state.isKeyDown(0, 60)).toBe(true);
+      dispose();
+    }));
+
+  it("starts counting afresh after pressedKeys is reset from outside", () =>
+    createRoot((dispose) => {
+      const state = createPianoRollstate();
+      state.onNoteDown(0, 60);
+      state.onNoteDown(0, 60);
+      // The store merges object writes, so a reset has to name the key.
+      state.onPressedKeysChange({ 0: { 60: false } });
+      state.onNoteDown(0, 60);
+      state.onNoteUp(0, 60);
+      expect(state.isKeyDown(0, 60)).toBe(false);
+      dispose();
+    }));
+
+  it("only wakes the key that changed", () =>
+    createRoot((dispose) => {
+      const state = createPianoRollstate();
+      state.onNoteDown(0, 61);
+      let runs = 0;
+      createEffect(() => {
+        state.isKeyDown(0, 62);
+        runs++;
+      });
+      const before = runs;
+      state.onNoteDown(0, 60);
+      state.onNoteUp(0, 61);
+      expect(runs).toBe(before);
+      dispose();
+    }));
+
+  it("hands a caller's handler a new object per change", () =>
+    createRoot((dispose) => {
+      const seen: Record<number, Record<number, boolean>>[] = [];
+      const state = createPianoRollstate({ onPressedKeysChange: (keys) => seen.push(keys) });
+      state.onNoteDown(0, 60);
+      state.onNoteDown(0, 64);
+      expect(seen).toHaveLength(2);
+      expect(seen[0]).not.toBe(seen[1]);
+      expect(seen[0]?.[0]).toEqual({ 60: true });
+      expect(seen[1]?.[0]).toEqual({ 60: true, 64: true });
       dispose();
     }));
 });
