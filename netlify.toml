@@ -1,0 +1,6 @@
+# Netlify builds with the Node version the site was created with (16 here), and
+# pnpm 10 (packageManager in package.json) needs Node 18.12 or later. Pinned
+# here, it no longer depends on the dashboard. Build command and publish
+# directory stay as configured there.
+[build.environment]
+  NODE_VERSION = "22"
